@@ -35,21 +35,35 @@ test.zr3
 Create an array:
 
 ```
->>> a1 = h.create_array('/foo/bar', shape=(100, 10), dtype='i4', chunks=(20, 5), compressor=None)
->>> a1
-<zarr_v3 Array /foo/bar>
+>>> a = h.create_array('/arthur/dent', shape=(100, 10), dtype='i4', chunk_shape=(20, 5), compressor=None, attrs={'question': 'life', 'answer': 42})
+>>> a
+<zarr_v3 Array /arthur/dent>
+>>> a.path
+'/arthur/dent'
+>>> a.ndim
+2
+>>> a.shape
+(100, 10)
+>>> a.dtype
+dtype('int32')
+>>> a.chunk_shape
+(20, 5)
+>>> a.compressor is None
+True
+>>> a.attrs
+{'question': 'life', 'answer': 42}
 >>> tree('test.zr3', '-n')
 test.zr3
 ├── meta
 │   └── root
-│       └── foo
-│           └── bar.array
+│       └── arthur
+│           └── dent.array
 └── zarr.json
 <BLANKLINE>
 3 directories, 2 files
 <BLANKLINE>
 
->>> cat('test.zr3/meta/root/foo/bar.array')
+>>> cat('test.zr3/meta/root/arthur/dent.array')
 {
     "shape": [
         100,
@@ -67,7 +81,45 @@ test.zr3
     "compressor": null,
     "fill_value": null,
     "extensions": [],
-    "attributes": null
+    "attributes": {
+        "question": "life",
+        "answer": 42
+    }
 }
+
+```
+
+Create a group:
+
+```
+>>> g = h.create_group('/tricia/mcmillan', attrs={'heart': 'gold', 'improbability': 'infinite'})
+>>> g
+<zarr_v3 Group /tricia/mcmillan>
+>>> g.attrs
+{'heart': 'gold', 'improbability': 'infinite'}
+
+```
+
+Access nodes in the hierarchy:
+
+```
+>>> a = h['/arthur/dent']
+>>> a
+<zarr_v3 Array /arthur/dent>
+>>> a.shape
+(100, 10)
+>>> a.dtype
+dtype('int32')
+>>> a.chunk_shape
+(20, 5)
+>>> a.compressor is None
+True
+>>> a.attrs
+{'question': 'life', 'answer': 42}
+>>> g = h['/tricia/mcmillan']
+>>> g
+<zarr_v3 Group /tricia/mcmillan>
+>>> g.attrs
+{'heart': 'gold', 'improbability': 'infinite'}
 
 ```

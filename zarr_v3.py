@@ -116,17 +116,17 @@ def _check_dtype(dtype):
     return dtype
 
 
-def _check_chunks(chunks, shape):
-    assert isinstance(chunks, tuple)
-    assert all([isinstance(c, int) for c in chunks])
-    assert len(chunks) == len(shape)
+def _check_chunk_shape(chunk_shape, shape):
+    assert isinstance(chunk_shape, tuple)
+    assert all([isinstance(c, int) for c in chunk_shape])
+    assert len(chunk_shape) == len(shape)
 
 
 def _check_compressor(compressor):
     assert compressor is None or isinstance(compressor, numcodecs.abc.Codec)
 
 
-def _get_codec_metadata(codec):
+def _encode_codec(codec):
     if codec is None:
         return None
 
@@ -139,6 +139,17 @@ def _get_codec_metadata(codec):
         'configuration': config,
     }
     return meta
+
+
+def _decode_codec(meta):
+    if meta is None:
+        return None
+
+    # only support gzip for now
+    if meta['codec'] != 'https://purl.org/zarr/spec/codec/gzip/1.0':
+        raise NotImplementedError
+    codec = numcodecs.GZip(level=meta['level'])
+    return codec
 
 
 class Hierarchy:
@@ -162,10 +173,9 @@ class Hierarchy:
         meta_doc = _json_encode(meta)
         if path == '/':
             # special case root path
-            meta_key_suffix = 'root.group'
+            meta_key = 'meta/root.group'
         else:
-            meta_key_suffix = 'root' + path + '.group'
-        meta_key = 'meta/' + meta_key_suffix
+            meta_key = f'meta/root{path}.group'
         self.store[meta_key] = meta_doc
 
         # instantiate group
@@ -174,13 +184,13 @@ class Hierarchy:
 
         return group
 
-    def create_array(self, path, shape, dtype, chunks, compressor, attrs=None):
+    def create_array(self, path, shape, dtype, chunk_shape, compressor, attrs=None):
 
         # sanity checks
         _check_path(path)
         _check_shape(shape)
         dtype = _check_dtype(dtype)
-        _check_chunks(chunks, shape)
+        _check_chunk_shape(chunk_shape, shape)
         _check_compressor(compressor)
         _check_attrs(attrs)
 
@@ -196,10 +206,10 @@ class Hierarchy:
             'data_type': data_type,
             'chunk_grid': {
                 'type': 'regular',
-                'chunk_shape': chunks,
+                'chunk_shape': chunk_shape,
             },
             'chunk_memory_layout': 'C',
-            'compressor': _get_codec_metadata(compressor),
+            'compressor': _encode_codec(compressor),
             'fill_value': None,
             'extensions': [],
             'attributes': attrs,
@@ -209,15 +219,14 @@ class Hierarchy:
         meta_doc = _json_encode(meta)
         if path == '/':
             # special case root path
-            meta_key_suffix = 'root.array'
+            meta_key = 'meta/root.array'
         else:
-            meta_key_suffix = 'root' + path + '.array'
-        meta_key = 'meta/' + meta_key_suffix
+            meta_key = f'meta/root{path}.array'
         self.store[meta_key] = meta_doc
 
         # instantiate array
         array = Array(store=self.store, path=path, owner=self,
-                      shape=shape, dtype=dtype, chunks=chunks,
+                      shape=shape, dtype=dtype, chunk_shape=chunk_shape,
                       compressor=compressor, attrs=attrs)
 
         return array
@@ -225,24 +234,62 @@ class Hierarchy:
     def get_array(self, path):
         _check_path(path)
 
-        # TODO retrieve and parse array metadata document
+        # retrieve and parse array metadata document
+        if path == '/':
+            meta_key = 'meta/root.array'
+        else:
+            meta_key = f'meta/root{path}.array'
+        try:
+            meta_doc = self.store[meta_key]
+        except KeyError:
+            raise NodeNotFoundError(path)
+        meta = _json_decode(meta_doc)
 
-        # TODO decode and check metadata
+        # decode and check metadata
+        shape = tuple(meta['shape'])
+        dtype = np.dtype(meta['data_type'])
+        chunk_grid = meta['chunk_grid']
+        if chunk_grid['type'] != 'regular':
+            raise NotImplementedError
+        chunk_shape = tuple(chunk_grid['chunk_shape'])
+        chunk_memory_layout = meta['chunk_memory_layout']
+        if chunk_memory_layout != 'C':
+            raise NotImplementedError
+        compressor = _decode_codec(meta['compressor'])
+        fill_value = meta['fill_value']
+        for spec in meta['extensions']:
+            if spec['must_understand']:
+                raise NotImplementedError
+        attrs = meta['attributes']
 
-        # TODO instantiate array
+        # instantiate array
+        a = Array(store=self.store, path=path, owner=self, shape=shape,
+                  dtype=dtype, chunk_shape=chunk_shape, compressor=compressor,
+                  attrs=attrs)
 
-        pass
+        return a
 
     def get_explicit_group(self, path):
         _check_path(path)
 
-        # TODO retrieve and parse group metadata document
+        # retrieve and parse group metadata document
+        if path == '/':
+            meta_key = 'meta/root.group'
+        else:
+            meta_key = f'meta/root{path}.group'
+        try:
+            meta_doc = self.store[meta_key]
+        except KeyError:
+            raise NodeNotFoundError(path)
+        meta = _json_decode(meta_doc)
 
-        # TODO check metadata
+        # check metadata
+        attrs = meta['attributes']
 
-        # TODO instantiate explicit group
+        # instantiate explicit group
+        g = ExplicitGroup(store=self.store, path=path, owner=self, attrs=attrs)
 
-        pass
+        return g
 
     def get_implicit_group(self, path):
         _check_path(path)
@@ -280,7 +327,9 @@ class Hierarchy:
 
 
 class NodeNotFoundError(Exception):
-    pass
+
+    def __init__(self, path):
+        self.path = path
 
 
 class Group:
@@ -351,16 +400,20 @@ class Array:
 
     # TODO persist changes to attrs
 
-    def __init__(self, store, path, owner, shape, dtype, chunks,
+    def __init__(self, store, path, owner, shape, dtype, chunk_shape,
                  compressor, attrs):
         self.store = store
         self.path = path
         self.owner = owner
         self.shape = shape
         self.dtype = dtype
-        self.chunks = chunks
+        self.chunk_shape = chunk_shape
         self.compressor = compressor
         self.attrs = attrs
+
+    @property
+    def ndim(self):
+        return len(self.shape)
 
     def __getitem__(self, item):
         # TODO
