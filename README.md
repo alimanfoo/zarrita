@@ -1,4 +1,5 @@
-**Here be dragons.** Minimal exploratory implementation of the Zarr version 3.0 core protocol. This is a technical spike, not for production use.
+**Here be dragons.** Minimal exploratory implementation of the Zarr version 3.0 core protocol. 
+This is a technical spike, not for production use.
 
 Ensure blank slate:
 
@@ -351,13 +352,13 @@ array([[ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9],
        [42, 42, 42, 42, 42, 42, 42, 42, 42, 42],
        [42, 42, 42, 42, 42, 42, 42, 42, 42, 42],
        [42, 42, 42, 42, 42, 42, 42, 42, 42, 42]], dtype=int32)
->>> a[:, 0] = np.arange(5)
+>>> a[:, 0] = np.arange(0, 50, 10)
 >>> a[:]
 array([[ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9],
-       [ 1, 42, 42, 42, 42, 42, 42, 42, 42, 42],
-       [ 2, 42, 42, 42, 42, 42, 42, 42, 42, 42],
-       [ 3, 42, 42, 42, 42, 42, 42, 42, 42, 42],
-       [ 4, 42, 42, 42, 42, 42, 42, 42, 42, 42]], dtype=int32)
+       [10, 42, 42, 42, 42, 42, 42, 42, 42, 42],
+       [20, 42, 42, 42, 42, 42, 42, 42, 42, 42],
+       [30, 42, 42, 42, 42, 42, 42, 42, 42, 42],
+       [40, 42, 42, 42, 42, 42, 42, 42, 42, 42]], dtype=int32)
 >>> a[:] = np.arange(50).reshape(5, 10)
 >>> a[:]
 array([[ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9],
