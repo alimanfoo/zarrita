@@ -17,13 +17,10 @@ Create a new hierarchy stored on the local file system:
 >>> h
 <zarr_v3 Hierarchy>
 >>> from sh import tree, cat
->>> tree('test.zr3', '-n')
+>>> tree('test.zr3', '-n', '--noreport')
 test.zr3
 └── zarr.json
 <BLANKLINE>
-0 directories, 1 file
-<BLANKLINE>
-
 >>> cat('test.zr3/zarr.json')
 {
     "zarr_format": "https://purl.org/zarr/spec/protocol/core/3.0",
@@ -67,7 +64,7 @@ dtype('int32')
 GZip(level=1)
 >>> a.attrs
 {'question': 'life', 'answer': 42}
->>> tree('test.zr3', '-n')
+>>> tree('test.zr3', '-n', '--noreport')
 test.zr3
 ├── meta
 │   └── root
@@ -75,9 +72,6 @@ test.zr3
 │           └── dent.array
 └── zarr.json
 <BLANKLINE>
-3 directories, 2 files
-<BLANKLINE>
-
 >>> cat('test.zr3/meta/root/arthur/dent.array')
 {
     "shape": [
@@ -122,7 +116,7 @@ Create a group:
 'mcmillan'
 >>> g.attrs
 {'heart': 'gold', 'improbability': 'infinite'}
->>> tree('test.zr3', '-n')
+>>> tree('test.zr3', '-n', '--noreport')
 test.zr3
 ├── meta
 │   └── root
@@ -132,9 +126,6 @@ test.zr3
 │           └── mcmillan.group
 └── zarr.json
 <BLANKLINE>
-4 directories, 3 files
-<BLANKLINE>
-
 >>> cat('test.zr3/meta/root/tricia/mcmillan.group')
 {
     "extensions": [],
@@ -245,7 +236,7 @@ Read and write data into an array:
 >>> a = h['/arthur/dent']
 >>> a
 <zarr_v3 Array /arthur/dent>
->>> tree('test.zr3', '-n')
+>>> tree('test.zr3', '-n', '--noreport')
 test.zr3
 ├── meta
 │   └── root
@@ -254,8 +245,6 @@ test.zr3
 │       └── tricia
 │           └── mcmillan.group
 └── zarr.json
-<BLANKLINE>
-4 directories, 3 files
 <BLANKLINE>
 >>> a[:, :]
 array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -282,7 +271,7 @@ array([[42, 42, 42, 42, 42, 42, 42, 42, 42, 42],
        [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
        [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
        [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0]], dtype=int32)
->>> tree('test.zr3', '-n')
+>>> tree('test.zr3', '-n', '--noreport')
 test.zr3
 ├── data
 │   └── arthur
@@ -297,8 +286,6 @@ test.zr3
 │           └── mcmillan.group
 └── zarr.json
 <BLANKLINE>
-7 directories, 5 files
-<BLANKLINE>
 >>> a[:, 0] = 42
 >>> a[:]
 array([[42, 42, 42, 42, 42, 42, 42, 42, 42, 42],
@@ -306,7 +293,7 @@ array([[42, 42, 42, 42, 42, 42, 42, 42, 42, 42],
        [42,  0,  0,  0,  0,  0,  0,  0,  0,  0],
        [42,  0,  0,  0,  0,  0,  0,  0,  0,  0],
        [42,  0,  0,  0,  0,  0,  0,  0,  0,  0]], dtype=int32)
->>> tree('test.zr3', '-n')
+>>> tree('test.zr3', '-n', '--noreport')
 test.zr3
 ├── data
 │   └── arthur
@@ -323,9 +310,6 @@ test.zr3
 │           └── mcmillan.group
 └── zarr.json
 <BLANKLINE>
-7 directories, 7 files
-<BLANKLINE>
-
 >>> a[:] = 42
 >>> a[:]
 array([[42, 42, 42, 42, 42, 42, 42, 42, 42, 42],
@@ -333,7 +317,7 @@ array([[42, 42, 42, 42, 42, 42, 42, 42, 42, 42],
        [42, 42, 42, 42, 42, 42, 42, 42, 42, 42],
        [42, 42, 42, 42, 42, 42, 42, 42, 42, 42],
        [42, 42, 42, 42, 42, 42, 42, 42, 42, 42]], dtype=int32)
->>> tree('test.zr3', '-n')
+>>> tree('test.zr3', '-n', '--noreport')
 test.zr3
 ├── data
 │   └── arthur
@@ -351,8 +335,6 @@ test.zr3
 │       └── tricia
 │           └── mcmillan.group
 └── zarr.json
-<BLANKLINE>
-7 directories, 9 files
 <BLANKLINE>
 >>> a[0, :] = np.arange(10)
 >>> a[:]
