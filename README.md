@@ -1,4 +1,4 @@
-**Here be dragons.**
+**Here be dragons.** Minimal exploratory implementation of the Zarr version 3.0 core protocol. This is a technical spike, not for production use.
 
 Ensure blank slate:
 
@@ -49,6 +49,8 @@ Create an array:
 <zarr_v3 Array /arthur/dent>
 >>> a.path
 '/arthur/dent'
+>>> a.name
+'dent'
 >>> a.ndim
 2
 >>> a.shape
@@ -104,6 +106,10 @@ Create a group:
 >>> g = h.create_group('/tricia/mcmillan', attrs={'heart': 'gold', 'improbability': 'infinite'})
 >>> g
 <zarr_v3 Group /tricia/mcmillan>
+>>> g.path
+'/tricia/mcmillan'
+>>> g.name
+'mcmillan'
 >>> g.attrs
 {'heart': 'gold', 'improbability': 'infinite'}
 >>> tree('test.zr3', '-n')

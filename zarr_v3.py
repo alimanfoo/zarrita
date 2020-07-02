@@ -385,6 +385,10 @@ class Group:
         self.path = path
         self.owner = owner
 
+    @property
+    def name(self):
+        return self.path.split('/')[-1]
+
     def list_children(self):
         return self.owner.list_children(self.path)
 
@@ -471,6 +475,10 @@ class Array:
     @property
     def ndim(self):
         return len(self.shape)
+
+    @property
+    def name(self):
+        return self.path.split('/')[-1]
 
     def __getitem__(self, item):
         # TODO
