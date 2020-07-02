@@ -123,10 +123,13 @@ def _check_chunks(chunks, shape):
 
 
 def _check_compressor(compressor):
-    assert isinstance(compressor, numcodecs.abc.Codec)
+    assert compressor is None or isinstance(compressor, numcodecs.abc.Codec)
 
 
 def _get_codec_metadata(codec):
+    if codec is None:
+        return None
+
     # only support gzip for now
     assert codec.codec_id in {'gzip'}
     config = codec.get_config()
@@ -404,24 +407,42 @@ class Store:
 
 class FileSystemStore(Store):
 
-    def __init__(self, fs, prefix=''):
-        if isinstance(fs, str):
-            # TODO instantiate file system
-            pass
-        assert isinstance(prefix, str)
-        self.fs = fs
-        self.prefix = prefix
+    # TODO ultimately replace this with the fsspec FSMap class, but for now roll
+    # our own implementation in order to be able to add some extra methods for
+    # listing keys.
 
-    def __getitem__(self, key):
+    def __init__(self, url, **kwargs):
+        assert isinstance(url, str)
+
+        # instantiate file system
+        fs, root = fsspec.core.url_to_fs(url, **kwargs)
+        self.fs = fs
+        self.root = root.rstrip('/')
+
+    def __getitem__(self, key, default=None):
         assert isinstance(key, str)
-        # TODO
-        pass
+        path = self.root + '/' + key
+
+        try:
+            value = self.fs.cat(path)
+        except (FileNotFoundError, IsADirectoryError, NotADirectoryError):
+            if default is not None:
+                return default
+            raise KeyError(key)
+
+        return value
 
     def __setitem__(self, key, value):
         assert isinstance(key, str)
         assert isinstance(value, bytes)
-        # TODO
-        pass
+        path = self.root + '/' + key
+
+        # ensure parent folder exists
+        self.fs.mkdirs(self.fs._parent(path), exist_ok=True)
+
+        # write data
+        with self.fs.open(path, 'wb') as f:
+            f.write(value)
 
     def __delitem__(self, key):
         assert isinstance(key, str)
