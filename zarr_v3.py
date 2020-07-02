@@ -335,6 +335,41 @@ class Hierarchy:
 
     def __repr__(self):
         return '<zarr_v3 Hierarchy>'
+    
+    def list_children(self, path):
+        _check_path(path)
+        
+        # attempt to list directory
+        if path == '/':
+            key_prefix = 'meta/root/'
+        else:
+            key_prefix = f'meta/root{path}/'
+        result = self.store.list_dir(key_prefix)
+        
+        # compile children
+        children = []
+        names = set()
+
+        # find explicit children
+        for n in sorted(result['contents']):
+            if n.endswith('.array'):
+                node_type = 'array'
+                name = n[:-len('.array')]
+            elif n.endswith('.group'):
+                node_type = 'explicit_group'
+                name = n[:-len('.group')]
+            else:
+                # ignore
+                continue
+            children.append({'name': name, 'type': node_type})
+            names.add(name)
+
+        # find implicit children
+        for n in sorted(result['prefixes']):
+            if n not in names:
+                children.append({'name': n, 'type': 'implicit_group'})
+
+        return children
 
 
 class NodeNotFoundError(Exception):
@@ -350,8 +385,8 @@ class Group:
         self.path = path
         self.owner = owner
 
-    def list_children(self, path):
-        pass
+    def list_children(self):
+        return self.owner.list_children(self.path)
 
     def _dereference_path(self, path):
         assert isinstance(path, str)
@@ -414,7 +449,7 @@ class ImplicitGroup(Group):
 
     def __repr__(self):
         path = self.path
-        return f'<zarr_v3 Group (implied) {path}>'
+        return f'<zarr_v3 Group {path} (implied)>'
 
 
 class Array:

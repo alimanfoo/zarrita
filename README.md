@@ -97,6 +97,27 @@ Create a group:
 <zarr_v3 Group /tricia/mcmillan>
 >>> g.attrs
 {'heart': 'gold', 'improbability': 'infinite'}
+>>> tree('test.zr3', '-n')
+test.zr3
+├── meta
+│   └── root
+│       ├── arthur
+│       │   └── dent.array
+│       └── tricia
+│           └── mcmillan.group
+└── zarr.json
+<BLANKLINE>
+4 directories, 3 files
+<BLANKLINE>
+
+>>> cat('test.zr3/meta/root/tricia/mcmillan.group')
+{
+    "extensions": [],
+    "attributes": {
+        "heart": "gold",
+        "improbability": "infinite"
+    }
+}
 
 ```
 
@@ -135,7 +156,7 @@ Access an implicit group:
 ```
 >>> g = h['/arthur']
 >>> g
-<zarr_v3 Group (implied) /arthur>
+<zarr_v3 Group /arthur (implied)>
 
 ```
 
@@ -144,14 +165,47 @@ Access nodes via groups:
 ```
 >>> root = h['/']
 >>> root
-<zarr_v3 Group (implied) />
+<zarr_v3 Group / (implied)>
 >>> arthur = root['arthur']
 >>> arthur
-<zarr_v3 Group (implied) /arthur>
+<zarr_v3 Group /arthur (implied)>
 >>> arthur['dent']
 <zarr_v3 Array /arthur/dent>
 >>> tricia = root['tricia']
+>>> tricia
+<zarr_v3 Group /tricia (implied)>
 >>> tricia['mcmillan']
 <zarr_v3 Group /tricia/mcmillan>
+
+```
+
+Explore the hierarchy:
+
+```
+>>> h.list_children('/')
+[{'name': 'arthur', 'type': 'implicit_group'}, {'name': 'tricia', 'type': 'implicit_group'}]
+>>> h.list_children('/tricia')
+[{'name': 'mcmillan', 'type': 'explicit_group'}]
+>>> h.list_children('/tricia/mcmillan')
+[]
+>>> h.list_children('/arthur')
+[{'name': 'dent', 'type': 'array'}]
+
+```
+
+Alternative way to explore the hierarchy:
+
+```
+>>> root = h['/']
+>>> root
+<zarr_v3 Group / (implied)>
+>>> root.list_children()
+[{'name': 'arthur', 'type': 'implicit_group'}, {'name': 'tricia', 'type': 'implicit_group'}]
+>>> root['tricia'].list_children()
+[{'name': 'mcmillan', 'type': 'explicit_group'}]
+>>> root['tricia']['mcmillan'].list_children()
+[]
+>>> root['arthur'].list_children()
+[{'name': 'dent', 'type': 'array'}]
 
 ```
