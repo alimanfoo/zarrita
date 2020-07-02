@@ -65,7 +65,7 @@ def get_hierarchy(store):
     # check protocol version
     zarr_format = meta['zarr_format']
     protocol_version = zarr_format.split('/')[-1]
-    protocol_major_version = protocol_version.split('.')[0]
+    protocol_major_version = int(protocol_version.split('.')[0])
     if protocol_major_version != 3:
         raise NotImplementedError
 
@@ -89,7 +89,8 @@ def get_hierarchy(store):
 def _check_path(path):
     assert isinstance(path, str)
     assert path[0] == '/'
-    assert path[-1] != '/'
+    if len(path) > 1:
+        assert path[-1] != '/'
 
 
 def _check_attrs(attrs):
@@ -184,7 +185,8 @@ class Hierarchy:
 
         return group
 
-    def create_array(self, path, shape, dtype, chunk_shape, compressor, attrs=None):
+    def create_array(self, path, shape, dtype, chunk_shape, compressor,
+                     fill_value=None, attrs=None):
 
         # sanity checks
         _check_path(path)
@@ -210,7 +212,7 @@ class Hierarchy:
             },
             'chunk_memory_layout': 'C',
             'compressor': _encode_codec(compressor),
-            'fill_value': None,
+            'fill_value': fill_value,
             'extensions': [],
             'attributes': attrs,
         }
@@ -227,7 +229,8 @@ class Hierarchy:
         # instantiate array
         array = Array(store=self.store, path=path, owner=self,
                       shape=shape, dtype=dtype, chunk_shape=chunk_shape,
-                      compressor=compressor, attrs=attrs)
+                      compressor=compressor, fill_value=fill_value,
+                      attrs=attrs)
 
         return array
 
@@ -265,7 +268,7 @@ class Hierarchy:
         # instantiate array
         a = Array(store=self.store, path=path, owner=self, shape=shape,
                   dtype=dtype, chunk_shape=chunk_shape, compressor=compressor,
-                  attrs=attrs)
+                  fill_value=fill_value, attrs=attrs)
 
         return a
 
@@ -294,11 +297,19 @@ class Hierarchy:
     def get_implicit_group(self, path):
         _check_path(path)
 
-        # TODO attempt to list directory
+        # attempt to list directory
+        if path == '/':
+            key_prefix = 'meta/root/'
+        else:
+            key_prefix = f'meta/root{path}/'
+        result = self.store.list_dir(key_prefix)
+        if not (result['contents'] or result['prefixes']):
+            raise NodeNotFoundError(path)
 
-        # TODO instantiate implicit group
+        # instantiate implicit group
+        g = ImplicitGroup(store=self.store, path=path, owner=self)
 
-        pass
+        return g
 
     def __getitem__(self, path):
 
@@ -342,19 +353,29 @@ class Group:
     def list_children(self, path):
         pass
 
+    def _dereference_path(self, path):
+        assert isinstance(path, str)
+        if path[0] != '/':
+            # treat as relative path
+            if self.path == '/':
+                # special case root group
+                path = f'/{path}'
+            else:
+                path = f'{self.path}/{path}'
+        if len(path) > 1:
+            assert path[-1] != '/'
+        return path
+
     def __getitem__(self, path):
-        # pass through to owner
-        _check_path(path)
-        return self.owner[self.path + path]
+        path = self._dereference_path(path)
+        return self.owner[path]
 
     def create_group(self, path, **kwargs):
-        # pass through to owner
-        _check_path(path)
+        path = self._dereference_path(path)
         return self.owner.create_group(self.path + path, **kwargs)
 
     def create_array(self, path, **kwargs):
-        # pass through to owner
-        _check_path(path)
+        path = self._dereference_path(path)
         return self.owner.create_array(self.path + path, **kwargs)
     
     def get_array(self, path):
@@ -401,7 +422,7 @@ class Array:
     # TODO persist changes to attrs
 
     def __init__(self, store, path, owner, shape, dtype, chunk_shape,
-                 compressor, attrs):
+                 compressor, fill_value, attrs):
         self.store = store
         self.path = path
         self.owner = owner
@@ -409,6 +430,7 @@ class Array:
         self.dtype = dtype
         self.chunk_shape = chunk_shape
         self.compressor = compressor
+        self.fill_value = fill_value
         self.attrs = attrs
 
     @property
@@ -474,7 +496,7 @@ class FileSystemStore(Store):
 
     def __getitem__(self, key, default=None):
         assert isinstance(key, str)
-        path = self.root + '/' + key
+        path = f'{self.root}/{key}'
 
         try:
             value = self.fs.cat(path)
@@ -488,9 +510,10 @@ class FileSystemStore(Store):
     def __setitem__(self, key, value):
         assert isinstance(key, str)
         assert isinstance(value, bytes)
-        path = self.root + '/' + key
+        path = f'{self.root}/{key}'
 
         # ensure parent folder exists
+        # noinspection PyProtectedMember
         self.fs.mkdirs(self.fs._parent(path), exist_ok=True)
 
         # write data
@@ -522,7 +545,28 @@ class FileSystemStore(Store):
         # TODO
         pass
 
-    def list_dir(self, prefix):
+    def list_dir(self, prefix=''):
         assert isinstance(prefix, str)
-        # TODO
-        pass
+
+        # setup result
+        result = {
+            'contents': [],
+            'prefixes': [],
+        }
+
+        # attempt to list directory
+        path = f'{self.root}/{prefix}'
+        try:
+            ls = self.fs.ls(path, detail=True)
+        except FileNotFoundError:
+            return result
+
+        # build result
+        for item in ls:
+            name = item['name'].split(path)[1]
+            if item['type'] == 'file':
+                result['contents'].append(name)
+            elif item['type'] == 'directory':
+                result['prefixes'].append(name)
+
+        return result

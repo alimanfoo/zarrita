@@ -100,7 +100,7 @@ Create a group:
 
 ```
 
-Access nodes in the hierarchy:
+Access an array:
 
 ```
 >>> a = h['/arthur/dent']
@@ -116,10 +116,42 @@ dtype('int32')
 True
 >>> a.attrs
 {'question': 'life', 'answer': 42}
+
+```
+
+Access an explicit group:
+
+```
 >>> g = h['/tricia/mcmillan']
 >>> g
 <zarr_v3 Group /tricia/mcmillan>
 >>> g.attrs
 {'heart': 'gold', 'improbability': 'infinite'}
+
+```
+
+Access an implicit group:
+
+```
+>>> g = h['/arthur']
+>>> g
+<zarr_v3 Group (implied) /arthur>
+
+```
+
+Access nodes via groups:
+
+```
+>>> root = h['/']
+>>> root
+<zarr_v3 Group (implied) />
+>>> arthur = root['arthur']
+>>> arthur
+<zarr_v3 Group (implied) /arthur>
+>>> arthur['dent']
+<zarr_v3 Array /arthur/dent>
+>>> tricia = root['tricia']
+>>> tricia['mcmillan']
+<zarr_v3 Group /tricia/mcmillan>
 
 ```
