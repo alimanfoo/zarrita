@@ -151,12 +151,15 @@ Access an explicit group:
 
 ```
 
-Access an implicit group:
+Access implicit groups:
 
 ```
->>> g = h['/arthur']
->>> g
+>>> h['/']
+<zarr_v3 Group / (implied)>
+>>> h['/arthur']
 <zarr_v3 Group /arthur (implied)>
+>>> h['/tricia']
+<zarr_v3 Group /tricia (implied)>
 
 ```
 
