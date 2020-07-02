@@ -4,7 +4,7 @@ Ensure blank slate:
 
 ```
 >>> import shutil
->>> shutil.rmtree('test.zr3')
+>>> shutil.rmtree('test.zr3', ignore_errors=True)
  
 ```
 
