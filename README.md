@@ -44,7 +44,7 @@ Access a previously created hierarchy:
 Create an array:
 
 ```
->>> a = h.create_array('/arthur/dent', shape=(100, 10), dtype='i4', chunk_shape=(20, 5), compressor=None, attrs={'question': 'life', 'answer': 42})
+>>> a = h.create_array('/arthur/dent', shape=(5, 10), dtype='i4', chunk_shape=(2, 5), compressor=None, attrs={'question': 'life', 'answer': 42})
 >>> a
 <zarr_v3 Array /arthur/dent>
 >>> a.path
@@ -54,11 +54,11 @@ Create an array:
 >>> a.ndim
 2
 >>> a.shape
-(100, 10)
+(5, 10)
 >>> a.dtype
 dtype('int32')
 >>> a.chunk_shape
-(20, 5)
+(2, 5)
 >>> a.compressor is None
 True
 >>> a.attrs
@@ -77,14 +77,14 @@ test.zr3
 >>> cat('test.zr3/meta/root/arthur/dent.array')
 {
     "shape": [
-        100,
+        5,
         10
     ],
     "data_type": "<i4",
     "chunk_grid": {
         "type": "regular",
         "chunk_shape": [
-            20,
+            2,
             5
         ]
     },
@@ -143,11 +143,11 @@ Access an array:
 >>> a
 <zarr_v3 Array /arthur/dent>
 >>> a.shape
-(100, 10)
+(5, 10)
 >>> a.dtype
 dtype('int32')
 >>> a.chunk_shape
-(20, 5)
+(2, 5)
 >>> a.compressor is None
 True
 >>> a.attrs
@@ -225,5 +225,15 @@ Alternative way to explore the hierarchy:
 []
 >>> root['arthur'].list_children()
 [{'name': 'dent', 'type': 'array'}]
+
+```
+
+Read and write data into an array:
+
+```
+>>> a = h['/arthur/dent']
+>>> a
+<zarr_v3 Array /arthur/dent>
+>>> a[:]
 
 ```
