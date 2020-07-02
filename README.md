@@ -32,6 +32,15 @@ test.zr3
 
 ```
 
+Access a previously created hierarchy:
+
+```
+>>> h = zarr_v3.get_hierarchy('test.zr3')
+>>> h
+<zarr_v3 Hierarchy>
+
+```
+
 Create an array:
 
 ```
