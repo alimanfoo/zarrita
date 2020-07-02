@@ -143,7 +143,7 @@ def _encode_codec(codec):
     # only support gzip for now
     assert codec.codec_id in {'gzip'}
     config = codec.get_config()
-    del config['codec_id']
+    del config['id']
     meta = {
         'codec': 'https://purl.org/zarr/spec/codec/gzip/1.0',
         'configuration': config,
@@ -158,7 +158,7 @@ def _decode_codec(meta):
     # only support gzip for now
     if meta['codec'] != 'https://purl.org/zarr/spec/codec/gzip/1.0':
         raise NotImplementedError
-    codec = numcodecs.GZip(level=meta['level'])
+    codec = numcodecs.GZip(level=meta['configuration']['level'])
     return codec
 
 

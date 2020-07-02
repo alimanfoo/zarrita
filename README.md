@@ -45,7 +45,10 @@ Access a previously created hierarchy:
 Create an array:
 
 ```
->>> a = h.create_array('/arthur/dent', shape=(5, 10), dtype='i4', chunk_shape=(2, 5), compressor=None, attrs={'question': 'life', 'answer': 42})
+>>> from numcodecs import GZip
+>>> compressor = GZip(level=1)
+>>> attrs = {'question': 'life', 'answer': 42}
+>>> a = h.create_array('/arthur/dent', shape=(5, 10), dtype='i4', chunk_shape=(2, 5), compressor=compressor, attrs=attrs)
 >>> a
 <zarr_v3 Array /arthur/dent>
 >>> a.path
@@ -60,8 +63,8 @@ Create an array:
 dtype('int32')
 >>> a.chunk_shape
 (2, 5)
->>> a.compressor is None
-True
+>>> a.compressor
+GZip(level=1)
 >>> a.attrs
 {'question': 'life', 'answer': 42}
 >>> tree('test.zr3', '-n')
@@ -90,7 +93,12 @@ test.zr3
         ]
     },
     "chunk_memory_layout": "C",
-    "compressor": null,
+    "compressor": {
+        "codec": "https://purl.org/zarr/spec/codec/gzip/1.0",
+        "configuration": {
+            "level": 1
+        }
+    },
     "fill_value": null,
     "extensions": [],
     "attributes": {
@@ -104,7 +112,8 @@ test.zr3
 Create a group:
 
 ```
->>> g = h.create_group('/tricia/mcmillan', attrs={'heart': 'gold', 'improbability': 'infinite'})
+>>> attrs = {'heart': 'gold', 'improbability': 'infinite'}
+>>> g = h.create_group('/tricia/mcmillan', attrs=attrs)
 >>> g
 <zarr_v3 Group /tricia/mcmillan>
 >>> g.path
@@ -149,8 +158,8 @@ Access an array:
 dtype('int32')
 >>> a.chunk_shape
 (2, 5)
->>> a.compressor is None
-True
+>>> a.compressor
+GZip(level=1)
 >>> a.attrs
 {'question': 'life', 'answer': 42}
 
