@@ -6,7 +6,7 @@ import itertools
 import collections
 import math
 from collections.abc import Mapping, MutableMapping
-from typing import Iterator, Union, Optional, Tuple, Any, List, Dict, Iterable
+from typing import Iterator, Union, Optional, Tuple, Any, List, Dict, NamedTuple
 
 
 # third-party dependencies
@@ -49,11 +49,11 @@ def create_hierarchy(store: Store, **storage_options) -> Hierarchy:
     store = _check_store(store, **storage_options)
 
     # create entry point metadata document
-    meta = {
-        'zarr_format': 'https://purl.org/zarr/spec/protocol/core/3.0',
-        'metadata_encoding': 'application/json',
-        'extensions': [],
-    }
+    meta: Dict[str, Any] = dict(
+        zarr_format='https://purl.org/zarr/spec/protocol/core/3.0',
+        metadata_encoding='application/json',
+        extensions=[],
+    )
 
     # serialise and store metadata document
     meta_doc = _json_encode(meta)
@@ -111,7 +111,7 @@ def _check_attrs(attrs: Optional[Mapping]) -> None:
     assert attrs is None or isinstance(attrs, Mapping)
 
 
-def _check_shape(shape: Tuple[int]) -> None:
+def _check_shape(shape: Tuple[Any, ...]) -> None:
     assert isinstance(shape, tuple)
     assert all([isinstance(s, int) for s in shape])
 
@@ -131,7 +131,7 @@ def _check_dtype(dtype: Any) -> np.dtype:
     return dtype
 
 
-def _check_chunk_shape(chunk_shape: Tuple[int], shape: Tuple[int]) -> None:
+def _check_chunk_shape(chunk_shape: Tuple[Any, ...], shape: Tuple[Any, ...]) -> None:
     assert isinstance(chunk_shape, tuple)
     assert all([isinstance(c, int) for c in chunk_shape])
     assert len(chunk_shape) == len(shape)
@@ -185,10 +185,10 @@ class Hierarchy(Mapping):
         _check_attrs(attrs)
 
         # create group metadata
-        meta = {
-            'extensions': [],
-            'attributes': attrs,
-        }
+        meta: Dict[str, Any] = dict(
+            extensions=[],
+            attributes=attrs,
+        )
 
         # serialise and store metadata document
         meta_doc = _json_encode(meta)
@@ -229,19 +229,19 @@ class Hierarchy(Mapping):
             data_type = dtype.str
 
         # create array metadata
-        meta = {
-            'shape': shape,
-            'data_type': data_type,
-            'chunk_grid': {
-                'type': 'regular',
-                'chunk_shape': chunk_shape,
-            },
-            'chunk_memory_layout': 'C',
-            'compressor': _encode_codec_metadata(compressor),
-            'fill_value': fill_value,
-            'extensions': [],
-            'attributes': attrs,
-        }
+        meta: Dict[str, Any] = dict(
+            shape=shape,
+            data_type=data_type,
+            chunk_grid=dict(
+                type='regular',
+                chunk_shape=chunk_shape,
+            ),
+            chunk_memory_layout='C',
+            compressor=_encode_codec_metadata(compressor),
+            fill_value=fill_value,
+            extensions=[],
+            attributes=attrs,
+        )
 
         # serialise and store metadata document
         meta_doc = _json_encode(meta)
@@ -276,11 +276,13 @@ class Hierarchy(Mapping):
 
         # decode and check metadata
         shape = tuple(meta['shape'])
-        dtype = np.dtype(meta['data_type'])
+        _check_shape(shape)
+        dtype = _check_dtype(meta['data_type'])
         chunk_grid = meta['chunk_grid']
         if chunk_grid['type'] != 'regular':
             raise NotImplementedError
         chunk_shape = tuple(chunk_grid['chunk_shape'])
+        _check_chunk_shape(chunk_shape, shape)
         chunk_memory_layout = meta['chunk_memory_layout']
         if chunk_memory_layout != 'C':
             raise NotImplementedError
@@ -288,7 +290,7 @@ class Hierarchy(Mapping):
         fill_value = meta['fill_value']
         for spec in meta['extensions']:
             if spec['must_understand']:
-                raise NotImplementedError
+                raise NotImplementedError(spec)
         attrs = meta['attributes']
 
         # instantiate array
@@ -360,13 +362,10 @@ class Hierarchy(Mapping):
         raise KeyError(path)
 
     def __len__(self) -> int:
-        return sum(1 for _ in self.keys())
+        return sum(1 for _ in self)
 
     def __iter__(self) -> Iterator[str]:
-        return self.keys()
-
-    def keys(self) -> Iterator[str]:
-        return []  # TODO all node paths!
+        yield from []  # TODO
 
     def __repr__(self) -> str:
         return f'<Hierarchy at {repr(self.store)}>'
@@ -431,13 +430,10 @@ class Group(Node, Mapping):
         super().__init__(store=store, path=path, owner=owner)
 
     def __len__(self) -> int:
-        return sum(1 for _ in self.keys())
+        return sum(1 for _ in self)
 
     def __iter__(self) -> Iterator[str]:
-        return self.keys()
-
-    def keys(self) -> Iterator[str]:
-        return []  # TODO all child names
+        yield from []  # TODO all child names
 
     def list_children(self) -> List[Dict]:
         return self.owner.list_children(path=self.path)
@@ -507,9 +503,9 @@ class Array(Node):
                  store: Store,
                  path: str,
                  owner: Hierarchy,
-                 shape: Tuple[int],
+                 shape: Tuple[int, ...],
                  dtype: Any,
-                 chunk_shape: Tuple[int],
+                 chunk_shape: Tuple[int, ...],
                  compressor: Optional[Codec],
                  fill_value: Any = None,
                  attrs: Optional[Mapping] = None):
@@ -803,20 +799,10 @@ def _replace_ellipsis(selection, shape):
     return selection
 
 
-_ChunkDimProjection = collections.namedtuple(
-    'ChunkDimProjection',
-    ('dim_chunk_ix', 'dim_chunk_sel', 'dim_out_sel')
-)
-"""A mapping from chunk to output array for a single dimension.
-Parameters
-----------
-dim_chunk_ix
-    Index of chunk.
-dim_chunk_sel
-    Selection of items from chunk array.
-dim_out_sel
-    Selection of items in target (output) array.
-"""
+class _ChunkDimProjection(NamedTuple):
+    dim_chunk_ix: Any
+    dim_chunk_sel: Any
+    dim_out_sel: Any
 
 
 def _normalize_integer_selection(dim_sel, dim_len):
@@ -921,22 +907,10 @@ class _SliceDimIndexer(object):
             yield _ChunkDimProjection(dim_chunk_ix, dim_chunk_sel, dim_out_sel)
 
 
-_ChunkProjection = collections.namedtuple(
-    'ChunkProjection',
-    ('chunk_coords', 'chunk_selection', 'out_selection')
-)
-"""A mapping of items from chunk to output array. Can be used to extract items from the
-chunk array for loading into an output array. Can also be used to extract items from a
-value array for setting/updating in a chunk array.
-Parameters
-----------
-chunk_coords
-    Indices of chunk.
-chunk_selection
-    Selection of items from chunk array.
-out_selection
-    Selection of items in target (output) array.
-"""
+class _ChunkProjection(NamedTuple):
+    chunk_coords: Any
+    chunk_selection: Any
+    out_selection: Any
 
 
 class _BasicIndexer(object):
@@ -978,10 +952,9 @@ class _BasicIndexer(object):
             yield _ChunkProjection(chunk_coords, chunk_selection, out_selection)
 
 
-ListDirResult = collections.namedtuple(
-    'ListDirResult',
-    ('contents', 'prefixes')
-)
+class ListDirResult(NamedTuple):
+    contents: List[str]
+    prefixes: List[str]
 
 
 class Store(MutableMapping):
@@ -995,22 +968,13 @@ class Store(MutableMapping):
     def __delitem__(self, key: str) -> None:
         raise NotImplementedError
 
-    def __iter__(self) -> Iterable[str]:
-        return self.keys()
+    def __iter__(self) -> Iterator[str]:
+        raise NotImplementedError
 
     def __len__(self) -> int:
-        return sum(1 for _ in self.keys())
+        return sum(1 for _ in self)
 
-    def keys(self) -> Iterable[str]:
-        raise NotImplementedError
-
-    def values(self) -> Iterable[bytes]:
-        raise NotImplementedError
-
-    def items(self) -> Iterable[Tuple]:
-        raise NotImplementedError
-
-    def list_pre(self, prefix: str) -> Iterable[str]:
+    def list_pre(self, prefix: str) -> Iterator[str]:
         raise NotImplementedError
 
     def list_dir(self, prefix: str) -> ListDirResult:
@@ -1061,24 +1025,18 @@ class FileSystemStore(Store):
         # TODO
         pass
 
-    def keys(self) -> Iterable[str]:
-        raise NotImplementedError
+    def __iter__(self) -> Iterator[str]:
+        yield from []  # TODO
 
-    def values(self) -> Iterable[bytes]:
-        raise NotImplementedError
-
-    def items(self) -> Iterable[Tuple]:
-        raise NotImplementedError
-
-    def list_pre(self, prefix: str) -> Iterable[str]:
+    def list_pre(self, prefix: str) -> Iterator[str]:
         raise NotImplementedError
 
     def list_dir(self, prefix: str = '') -> ListDirResult:
         assert isinstance(prefix, str)
 
         # setup result
-        contents = []
-        prefixes = []
+        contents: List[str] = []
+        prefixes: List[str] = []
 
         # attempt to list directory
         path = f'{self.root}/{prefix}'
