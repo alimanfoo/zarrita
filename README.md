@@ -139,6 +139,33 @@ test.zr3
 
 ```
 
+
+## Create nodes via groups
+
+```python
+>>> h.root.create_group('marvin')
+<Group /marvin>
+>>> h.root['marvin'].create_group('paranoid')
+<Group /marvin/paranoid>
+>>> h.root['marvin'].create_array('android', shape=(42, 42), dtype=bool, chunk_shape=(2, 2))
+<Array /marvin/android>
+>>> tree('test.zr3', '-n', '--noreport')  # doctest: +NORMALIZE_WHITESPACE
+test.zr3
+├── meta
+│   └── root
+│       ├── arthur
+│       │   └── dent.array
+│       ├── marvin
+│       │   ├── android.array
+│       │   └── paranoid.group
+│       ├── marvin.group
+│       └── tricia
+│           └── mcmillan.group
+└── zarr.json
+
+```
+
+
 ## Access an array
 
 ```python
@@ -200,13 +227,16 @@ GZip(level=1)
 
 ```
 
+
 ## List group children
 
 Explore the hierarchy top-down:
 
 ```python
->>> h.list_children('/')
-[{'name': 'arthur', 'type': 'implicit_group'}, {'name': 'tricia', 'type': 'implicit_group'}]
+>>> h.list_children('/')  # doctest: +NORMALIZE_WHITESPACE
+[{'name': 'marvin', 'type': 'explicit_group'}, 
+ {'name': 'arthur', 'type': 'implicit_group'}, 
+ {'name': 'tricia', 'type': 'implicit_group'}]
 >>> h.list_children('/tricia')
 [{'name': 'mcmillan', 'type': 'explicit_group'}]
 >>> h.list_children('/tricia/mcmillan')
@@ -219,17 +249,60 @@ Explore the hierarchy top-down:
 Alternative way to explore the hierarchy:
 
 ```python
->>> root = h['/']
->>> root
+>>> h.root
 <Group / (implied)>
->>> root.list_children()
-[{'name': 'arthur', 'type': 'implicit_group'}, {'name': 'tricia', 'type': 'implicit_group'}]
->>> root['tricia'].list_children()
+>>> h.root.list_children()  # doctest: +NORMALIZE_WHITESPACE
+[{'name': 'marvin', 'type': 'explicit_group'}, 
+ {'name': 'arthur', 'type': 'implicit_group'}, 
+ {'name': 'tricia', 'type': 'implicit_group'}]
+>>> h.root['tricia'].list_children()
 [{'name': 'mcmillan', 'type': 'explicit_group'}]
->>> root['tricia']['mcmillan'].list_children()
+>>> h.root['tricia']['mcmillan'].list_children()
 []
->>> root['arthur'].list_children()
+>>> h.root['arthur'].list_children()
 [{'name': 'dent', 'type': 'array'}]
+
+```
+
+## Check existence of nodes in a hierarchy
+
+```python
+>>> '/' in h
+True
+>>> '/arthur' in h
+True
+>>> '/arthur/dent' in h
+True
+>>> '/zaphod' in h
+False
+>>> '/zaphod/beeblebrox' in h
+False
+>>> '/tricia' in h
+True
+>>> '/tricia/mcmillan' in h
+True
+
+```
+
+
+## Check existence of children in a group
+
+```python
+>>> root = h['/']
+>>> 'arthur' in root
+True
+>>> 'tricia' in root
+True
+>>> 'zaphod' in root
+False
+>>> g = root['arthur']
+>>> 'dent' in g
+True
+>>> g = root['tricia']
+>>> 'mcmillan' in g
+True
+>>> 'beeblebrox' in g
+False
 
 ```
 
@@ -246,6 +319,10 @@ test.zr3
 │   └── root
 │       ├── arthur
 │       │   └── dent.array
+│       ├── marvin
+│       │   ├── android.array
+│       │   └── paranoid.group
+│       ├── marvin.group
 │       └── tricia
 │           └── mcmillan.group
 └── zarr.json
@@ -285,6 +362,10 @@ test.zr3
 │   └── root
 │       ├── arthur
 │       │   └── dent.array
+│       ├── marvin
+│       │   ├── android.array
+│       │   └── paranoid.group
+│       ├── marvin.group
 │       └── tricia
 │           └── mcmillan.group
 └── zarr.json
@@ -308,6 +389,10 @@ test.zr3
 │   └── root
 │       ├── arthur
 │       │   └── dent.array
+│       ├── marvin
+│       │   ├── android.array
+│       │   └── paranoid.group
+│       ├── marvin.group
 │       └── tricia
 │           └── mcmillan.group
 └── zarr.json
@@ -333,6 +418,10 @@ test.zr3
 │   └── root
 │       ├── arthur
 │       │   └── dent.array
+│       ├── marvin
+│       │   ├── android.array
+│       │   └── paranoid.group
+│       ├── marvin.group
 │       └── tricia
 │           └── mcmillan.group
 └── zarr.json
@@ -394,8 +483,10 @@ Read data previously copied to GCS:
 >>> h = zarrita.get_hierarchy('gs://zarr-demo/v3/test.zr3', token='anon')
 >>> h
 <Hierarchy at gs://zarr-demo/v3/test.zr3>
->>> h.list_children('/')
-[{'name': 'arthur', 'type': 'implicit_group'}, {'name': 'tricia', 'type': 'implicit_group'}]
+>>> h.list_children('/')  # doctest: +NORMALIZE_WHITESPACE
+[{'name': 'marvin', 'type': 'explicit_group'}, 
+ {'name': 'arthur', 'type': 'implicit_group'},
+ {'name': 'tricia', 'type': 'implicit_group'}]
 >>> h.list_children('/arthur')
 [{'name': 'dent', 'type': 'array'}]
 >>> h.list_children('/tricia')
