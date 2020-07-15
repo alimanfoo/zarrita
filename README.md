@@ -288,17 +288,16 @@ True
 ## Check existence of children in a group
 
 ```python
->>> root = h['/']
->>> 'arthur' in root
+>>> 'arthur' in h.root
 True
->>> 'tricia' in root
+>>> 'tricia' in h.root
 True
->>> 'zaphod' in root
+>>> 'zaphod' in h.root
 False
->>> g = root['arthur']
+>>> g = h.root['arthur']
 >>> 'dent' in g
 True
->>> g = root['tricia']
+>>> g = h.root['tricia']
 >>> 'mcmillan' in g
 True
 >>> 'beeblebrox' in g
