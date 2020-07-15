@@ -10,6 +10,8 @@ Ensure blank slate:
  
 ```
 
+## Create a hierarchy
+
 Create a new hierarchy stored on the local file system:
 
 ```python
@@ -30,6 +32,8 @@ test.zr3
 
 ```
 
+## Open a hierarchy
+
 Access a previously created hierarchy:
 
 ```python
@@ -39,7 +43,7 @@ Access a previously created hierarchy:
 
 ```
 
-Create an array:
+## Create an array
 
 ```python
 >>> from numcodecs import GZip
@@ -102,7 +106,7 @@ test.zr3
 
 ```
 
-Create a group:
+## Create a group
 
 ```python
 >>> attrs = {'heart': 'gold', 'improbability': 'infinite'}
@@ -135,7 +139,7 @@ test.zr3
 
 ```
 
-Access an array:
+## Access an array
 
 ```python
 >>> a = h['/arthur/dent']
@@ -154,7 +158,7 @@ GZip(level=1)
 
 ```
 
-Access an explicit group:
+## Access an explicit group
 
 ```python
 >>> g = h['/tricia/mcmillan']
@@ -165,7 +169,7 @@ Access an explicit group:
 
 ```
 
-Access implicit groups:
+## Access implicit groups
 
 ```python
 >>> h['/']
@@ -177,7 +181,7 @@ Access implicit groups:
 
 ```
 
-Access nodes via groups:
+## Access nodes via groups
 
 ```python
 >>> root = h['/']
@@ -196,7 +200,9 @@ Access nodes via groups:
 
 ```
 
-Explore the hierarchy:
+## List group children
+
+Explore the hierarchy top-down:
 
 ```python
 >>> h.list_children('/')
@@ -227,7 +233,7 @@ Alternative way to explore the hierarchy:
 
 ```
 
-Read and write data into an array:
+## Read and write array data
 
 ```python
 >>> import numpy as np
@@ -380,7 +386,9 @@ array([[12, 13, 14, 15, 16],
 
 ```
 
-Use cloud storage (data previously copied to GCS):
+## Use cloud storage
+ 
+Read data previously copied to GCS:
 
 ```python
 >>> h = zarrita.get_hierarchy('gs://zarr-demo/v3/test.zr3', token='anon')
