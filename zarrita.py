@@ -100,11 +100,25 @@ def get_hierarchy(store: Store, **storage_options) -> Hierarchy:
     return hierarchy
 
 
+ALLOWED_NODE_NAME_CHARS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ._-'
+
+
 def _check_path(path: str) -> None:
     assert isinstance(path, str)
-    assert path[0] == '/'
+    if len(path) == 0:
+        raise ValueError
+    if path[0] != '/':
+        raise ValueError
     if len(path) > 1:
-        assert path[-1] != '/'
+        segments = path[1:].split('/')
+        for segment in segments:
+            if len(segment) == 0:
+                raise ValueError
+            for c in segment:
+                if c not in ALLOWED_NODE_NAME_CHARS:
+                    raise ValueError
+            if all([c == '.' for c in segment]):
+                raise ValueError
 
 
 def _check_attrs(attrs: Optional[Mapping]) -> None:

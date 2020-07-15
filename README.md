@@ -474,6 +474,19 @@ array([[12, 13, 14, 15, 16],
 
 ```
 
+
+## Invalid node names
+
+```python
+>>> bad_paths = '', '//', '/foo//bar', ' ', '.', '/../', '/foo/./bar', '/foo/../bar', '/ ', 'Καλημέρα'
+>>> for p in bad_paths:
+...     try:
+...         h.create_group(p)
+...     except ValueError:
+...         pass
+
+```
+
 ## Use cloud storage
  
 Read data previously copied to GCS:
