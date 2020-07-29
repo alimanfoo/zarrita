@@ -228,6 +228,34 @@ GZip(level=1)
 ```
 
 
+## Access nodes - convenience
+
+Zarrita treats a hierarchy and its root node as separate objects. E.g., the 
+root node can be accessed via two different ways:
+
+```python
+>>> h['/']
+<Group / (implied)>
+>>> h.root
+<Group / (implied)>
+
+```
+
+However, for convenience and familiarity, any relative path accessed via a 
+hierarchy is treated as relative to the root group. E.g.:
+
+```python
+>>> h['/arthur']
+<Group /arthur (implied)>
+>>> h['arthur']
+<Group /arthur (implied)>
+>>> h['/tricia/mcmillan']
+<Group /tricia/mcmillan>
+>>> h['tricia']['mcmillan']
+<Group /tricia/mcmillan>
+
+```
+
 ## List group children
 
 Explore the hierarchy top-down:

@@ -357,6 +357,11 @@ class Hierarchy(Mapping):
         return g
 
     def __getitem__(self, path: str) -> Node:
+        assert isinstance(path, str)
+
+        # handle relative paths, treat as relative to the root, for user convenience
+        if path[0] != '/':
+            path = '/' + path
 
         # try array
         try:
