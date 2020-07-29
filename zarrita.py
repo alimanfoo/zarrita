@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import numbers
 import itertools
-import collections
 import math
 from collections.abc import Mapping, MutableMapping
 from typing import Iterator, Union, Optional, Tuple, Any, List, Dict, NamedTuple
@@ -18,16 +17,18 @@ from numcodecs.abc import Codec
 from numcodecs.compat import ensure_ndarray
 
 
-def _json_encode(o: Mapping) -> bytes:
+def _json_encode_object(o: Mapping) -> bytes:
+    assert isinstance(o, Mapping)
     s = json.dumps(o, ensure_ascii=False, allow_nan=False, indent=4,
                    sort_keys=False)
     b = s.encode('utf8')
     return b
 
 
-def _json_decode(b: bytes) -> Mapping:
+def _json_decode_object(b: bytes) -> Mapping:
     assert isinstance(b, bytes)
     o = json.loads(b)
+    assert isinstance(o, Mapping)
     return o
 
 
@@ -56,7 +57,7 @@ def create_hierarchy(store: Store, **storage_options) -> Hierarchy:
     )
 
     # serialise and store metadata document
-    meta_doc = _json_encode(meta)
+    meta_doc = _json_encode_object(meta)
     meta_key = 'zarr.json'
     store[meta_key] = meta_doc
 
@@ -74,11 +75,13 @@ def get_hierarchy(store: Store, **storage_options) -> Hierarchy:
     # retrieve and parse entry point metadata document
     meta_key = 'zarr.json'
     meta_doc = store[meta_key]
-    meta = _json_decode(meta_doc)
+    meta = _json_decode_object(meta_doc)
 
     # check protocol version
     zarr_format = meta['zarr_format']
-    protocol_version = zarr_format.split('/')[-1]
+    protocol_uri, protocol_version = zarr_format.rsplit('/', 1)
+    if protocol_uri != 'https://purl.org/zarr/spec/protocol/core':
+        raise NotImplementedError
     protocol_major_version = int(protocol_version.split('.')[0])
     if protocol_major_version != 3:
         raise NotImplementedError
@@ -205,7 +208,7 @@ class Hierarchy(Mapping):
         )
 
         # serialise and store metadata document
-        meta_doc = _json_encode(meta)
+        meta_doc = _json_encode_object(meta)
         if path == '/':
             # special case root path
             meta_key = 'meta/root.group'
@@ -258,7 +261,7 @@ class Hierarchy(Mapping):
         )
 
         # serialise and store metadata document
-        meta_doc = _json_encode(meta)
+        meta_doc = _json_encode_object(meta)
         if path == '/':
             # special case root path
             meta_key = 'meta/root.array'
@@ -286,7 +289,7 @@ class Hierarchy(Mapping):
             meta_doc = self.store[meta_key]
         except KeyError:
             raise NodeNotFoundError(path=path)
-        meta = _json_decode(meta_doc)
+        meta = _json_decode_object(meta_doc)
 
         # decode and check metadata
         shape = tuple(meta['shape'])
@@ -326,7 +329,7 @@ class Hierarchy(Mapping):
             meta_doc = self.store[meta_key]
         except KeyError:
             raise NodeNotFoundError(path=path)
-        meta = _json_decode(meta_doc)
+        meta = _json_decode_object(meta_doc)
 
         # check metadata
         attrs = meta['attributes']
