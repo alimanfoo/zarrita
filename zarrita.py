@@ -44,7 +44,7 @@ def _check_store(store: Union[str, Store],
     return store
 
 
-def create_hierarchy(store: Store, **storage_options) -> Hierarchy:
+def create_hierarchy(store: Union[str, Store], **storage_options) -> Hierarchy:
 
     # sanity checks
     store = _check_store(store, **storage_options)
@@ -67,7 +67,7 @@ def create_hierarchy(store: Store, **storage_options) -> Hierarchy:
     return hierarchy
 
 
-def get_hierarchy(store: Store, **storage_options) -> Hierarchy:
+def get_hierarchy(store: Union[str, Store], **storage_options) -> Hierarchy:
 
     # sanity checks
     store = _check_store(store, **storage_options)
@@ -195,7 +195,7 @@ class Hierarchy(Mapping):
 
     def create_group(self,
                      path: str,
-                     attrs: Mapping = None) -> ExplicitGroup:
+                     attrs: Optional[Mapping] = None) -> ExplicitGroup:
 
         # sanity checks
         _check_path(path)
