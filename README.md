@@ -230,18 +230,19 @@ GZip(level=1)
 
 ## Access nodes - convenience
 
-Zarrita treats a hierarchy and its root node as separate objects. E.g., the 
-root node can be accessed via two different ways:
+Zarrita treats a hierarchy and its root node as separate objects. E.g.:
 
 ```python
+>>> h
+<Hierarchy at file://.../test.zr3>
 >>> h['/']
 <Group / (implied)>
->>> h.root
+>>> h.root  # alternative way to access the root node
 <Group / (implied)>
 
 ```
 
-However, for convenience and familiarity, any relative path accessed via a 
+For convenience and familiarity, any relative path accessed via a 
 hierarchy is treated as relative to the root group. E.g.:
 
 ```python
