@@ -51,7 +51,7 @@ def create_hierarchy(store: Store, **storage_options) -> Hierarchy:
     # create entry point metadata document
     meta: Dict[str, Any] = dict(
         zarr_format='https://purl.org/zarr/spec/protocol/core/3.0',
-        metadata_encoding='application/json',
+        metadata_encoding='https://purl.org/zarr/spec/metadata/json/3.0',
         extensions=[],
     )
 
@@ -85,7 +85,7 @@ def get_hierarchy(store: Store, **storage_options) -> Hierarchy:
 
     # check metadata encoding
     metadata_encoding = meta['metadata_encoding']
-    if metadata_encoding != 'application/json':
+    if metadata_encoding != 'https://purl.org/zarr/spec/metadata/json/3.0':
         raise NotImplementedError
 
     # check extensions
@@ -583,7 +583,7 @@ class Array(Node):
             out[out_selection] = tmp
 
     def _chunk_key(self, chunk_coords):
-        suffix = '.'.join(map(str, chunk_coords))
+        suffix = '/'.join(map(str, chunk_coords))
         if self.path == '/':
             # special case array as root node
             key = f'data/{suffix}'
