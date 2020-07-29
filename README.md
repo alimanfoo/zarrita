@@ -256,14 +256,14 @@ hierarchy is treated as relative to the root group. E.g.:
 
 ```
 
-## List group children
+## Dicover group children
 
 Explore the hierarchy top-down:
 
 ```python
 >>> h.list_children('/')  # doctest: +NORMALIZE_WHITESPACE
-[{'name': 'marvin', 'type': 'explicit_group'}, 
- {'name': 'arthur', 'type': 'implicit_group'}, 
+[{'name': 'arthur', 'type': 'implicit_group'}, 
+ {'name': 'marvin', 'type': 'explicit_group'}, 
  {'name': 'tricia', 'type': 'implicit_group'}]
 >>> h.list_children('/tricia')
 [{'name': 'mcmillan', 'type': 'explicit_group'}]
@@ -280,8 +280,8 @@ Alternative way to explore the hierarchy:
 >>> h.root
 <Group / (implied)>
 >>> h.root.list_children()  # doctest: +NORMALIZE_WHITESPACE
-[{'name': 'marvin', 'type': 'explicit_group'}, 
- {'name': 'arthur', 'type': 'implicit_group'}, 
+[{'name': 'arthur', 'type': 'implicit_group'}, 
+ {'name': 'marvin', 'type': 'explicit_group'}, 
  {'name': 'tricia', 'type': 'implicit_group'}]
 >>> h.root['tricia'].list_children()
 [{'name': 'mcmillan', 'type': 'explicit_group'}]
@@ -332,6 +332,33 @@ True
 False
 
 ```
+
+## Iterating over a hierarchy or group
+
+Iterating over a group returns names of all child nodes:
+
+```python
+>>> sorted(h['/'])
+['arthur', 'marvin', 'tricia']
+>>> sorted(h['/arthur'])
+['dent']
+>>> sorted(h['/tricia'])
+['mcmillan']
+>>> sorted(h['/tricia/mcmillan'])
+[]
+>>> sorted(h['/marvin'])
+['android', 'paranoid']
+
+```
+
+Iterate over a hierarchy returns paths for all explicit nodes:
+
+```python
+>>> sorted(h)
+['/arthur/dent', '/marvin', '/marvin/android', '/marvin/paranoid', '/tricia/mcmillan']
+
+```
+
 
 ## Read and write array data
 
@@ -523,9 +550,11 @@ Read data previously copied to GCS:
 >>> h = zarrita.get_hierarchy('gs://zarr-demo/v3/test.zr3', token='anon')
 >>> h
 <Hierarchy at gs://zarr-demo/v3/test.zr3>
+>>> sorted(h)
+['/arthur/dent', '/marvin', '/marvin/android', '/marvin/paranoid', '/tricia/mcmillan']
 >>> h.list_children('/')  # doctest: +NORMALIZE_WHITESPACE
-[{'name': 'marvin', 'type': 'explicit_group'}, 
- {'name': 'arthur', 'type': 'implicit_group'},
+[{'name': 'arthur', 'type': 'implicit_group'},
+ {'name': 'marvin', 'type': 'explicit_group'}, 
  {'name': 'tricia', 'type': 'implicit_group'}]
 >>> h.list_children('/arthur')
 [{'name': 'dent', 'type': 'array'}]

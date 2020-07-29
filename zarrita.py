@@ -6,7 +6,7 @@ import itertools
 import math
 from collections.abc import Mapping, MutableMapping
 from typing import Iterator, Union, Optional, Tuple, Any, List, Dict, NamedTuple
-
+from operator import itemgetter
 
 # third-party dependencies
 
@@ -387,12 +387,21 @@ class Hierarchy(Mapping):
         return sum(1 for _ in self)
 
     def __iter__(self) -> Iterator[str]:
-        yield from []  # TODO
+        # return all paths for explicit nodes
+        result = self.store.list_pre('meta/')
+        for key in result:
+            if key in {'root.array', 'root.group'}:
+                yield '/'
+            elif key.startswith('root/'):
+                if key.endswith('.array'):
+                    yield key[len('root'):-len('.array')]
+                if key.endswith('.group'):
+                    yield key[len('root'):-len('.group')]
 
     def __repr__(self) -> str:
         return f'<Hierarchy at {repr(self.store)}>'
     
-    def list_children(self, path: str) -> List[Dict]:
+    def iter_children(self, path: str) -> Iterator[Dict]:
         _check_path(path)
         
         # attempt to list directory
@@ -402,12 +411,11 @@ class Hierarchy(Mapping):
             key_prefix = f'meta/root{path}/'
         result = self.store.list_dir(key_prefix)
         
-        # compile children
-        children = []
+        # keep track of children found
         names = set()
 
         # find explicit children
-        for n in sorted(result.contents):
+        for n in result.contents:
             if n.endswith('.array'):
                 node_type = 'array'
                 name = n[:-len('.array')]
@@ -417,15 +425,16 @@ class Hierarchy(Mapping):
             else:
                 # ignore
                 continue
-            children.append({'name': name, 'type': node_type})
             names.add(name)
+            yield {'name': name, 'type': node_type}
 
         # find implicit children
-        for n in sorted(result.prefixes):
+        for n in result.prefixes:
             if n not in names:
-                children.append({'name': n, 'type': 'implicit_group'})
+                yield {'name': n, 'type': 'implicit_group'}
 
-        return children
+    def list_children(self, path: str) -> List[Dict]:
+        return sorted(self.iter_children(path=path), key=itemgetter('name'))
 
 
 class NodeNotFoundError(Exception):
@@ -455,10 +464,14 @@ class Group(Node, Mapping):
         return sum(1 for _ in self)
 
     def __iter__(self) -> Iterator[str]:
-        yield from []  # TODO all child names
+        for child in self.iter_children():
+            yield child['name']
+
+    def iter_children(self) -> Iterator[Dict]:
+        yield from self.owner.iter_children(path=self.path)
 
     def list_children(self) -> List[Dict]:
-        return self.owner.list_children(path=self.path)
+        return sorted(self.iter_children(), key=itemgetter('name'))
 
     def _dereference_path(self, path: str) -> str:
         assert isinstance(path, str)
@@ -1051,7 +1064,13 @@ class FileSystemStore(Store):
         yield from []  # TODO
 
     def list_pre(self, prefix: str) -> Iterator[str]:
-        raise NotImplementedError
+        assert isinstance(prefix, str)
+        path = f'{self.root}/{prefix}'
+        try:
+            items = self.fs.find(path, withdirs=False, detail=False)
+        except FileNotFoundError:
+            return []
+        return [item.split(path)[1] for item in items]
 
     def list_dir(self, prefix: str = '') -> ListDirResult:
         assert isinstance(prefix, str)
