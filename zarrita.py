@@ -1061,9 +1061,10 @@ class FileSystemStore(Store):
         pass
 
     def __iter__(self) -> Iterator[str]:
-        yield from []  # TODO
+        for item in self.fs.find(self.root, withdirs=False, detail=False):
+            yield item.split(self.root + '/')[1]
 
-    def list_pre(self, prefix: str) -> Iterator[str]:
+    def list_pre(self, prefix: str) -> List[str]:
         assert isinstance(prefix, str)
         path = f'{self.root}/{prefix}'
         try:
