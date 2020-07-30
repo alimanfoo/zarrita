@@ -233,7 +233,7 @@ GZip(level=1)
 Zarrita treats a hierarchy and its root node as separate objects. E.g.:
 
 ```python
->>> h
+>>> h  # doctest: +ELLIPSIS
 <Hierarchy at file://.../test.zr3>
 >>> h['/']
 <Group / (implied)>

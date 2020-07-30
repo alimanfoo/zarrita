@@ -1009,7 +1009,7 @@ class Store(MutableMapping):
     def __len__(self) -> int:
         return sum(1 for _ in self)
 
-    def list_pre(self, prefix: str) -> Iterator[str]:
+    def list_pre(self, prefix: str) -> List[str]:
         raise NotImplementedError
 
     def list_dir(self, prefix: str) -> ListDirResult:
