@@ -6,7 +6,7 @@ import itertools
 import math
 from collections.abc import Mapping, MutableMapping
 from typing import Iterator, Union, Optional, Tuple, Any, List, Dict, NamedTuple
-from operator import itemgetter, attrgetter
+from operator import itemgetter
 
 # third-party dependencies
 

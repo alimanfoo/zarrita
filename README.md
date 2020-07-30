@@ -297,8 +297,8 @@ View the whole hierarchy in one go:
 
 ```python
 >>> h.get_nodes()  # doctest: +NORMALIZE_WHITESPACE
-{'/': 'implicit_group', 
- '/arthur': 'implicit_group', 
+{'/': 'implicit_group',
+ '/arthur': 'implicit_group',
  '/arthur/dent': 'array', 
  '/marvin': 'explicit_group', 
  '/marvin/android': 'array', 
