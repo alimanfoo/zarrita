@@ -51,7 +51,7 @@ def create_hierarchy(store: Store, **storage_options) -> Hierarchy:
     # create entry point metadata document
     meta: Dict[str, Any] = dict(
         zarr_format='https://purl.org/zarr/spec/protocol/core/3.0',
-        metadata_encoding='https://purl.org/zarr/spec/metadata/json/3.0',
+        metadata_encoding='https://tools.ietf.org/html/rfc8259',
         extensions=[],
     )
 
@@ -85,7 +85,7 @@ def get_hierarchy(store: Store, **storage_options) -> Hierarchy:
 
     # check metadata encoding
     metadata_encoding = meta['metadata_encoding']
-    if metadata_encoding != 'https://purl.org/zarr/spec/metadata/json/3.0':
+    if metadata_encoding != 'https://tools.ietf.org/html/rfc8259':
         raise NotImplementedError
 
     # check extensions

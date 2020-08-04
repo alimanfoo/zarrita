@@ -26,7 +26,7 @@ test.zr3
 >>> cat('test.zr3/zarr.json')
 {
     "zarr_format": "https://purl.org/zarr/spec/protocol/core/3.0",
-    "metadata_encoding": "https://purl.org/zarr/spec/metadata/json/3.0",
+    "metadata_encoding": "https://tools.ietf.org/html/rfc8259",
     "extensions": []
 }
 
