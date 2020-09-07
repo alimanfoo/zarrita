@@ -7,7 +7,7 @@ Ensure blank slate:
 ```python
 >>> import shutil
 >>> shutil.rmtree('test.zr3', ignore_errors=True)
- 
+
 ```
 
 ## Create a hierarchy
@@ -87,7 +87,8 @@ test.zr3
         "chunk_shape": [
             2,
             5
-        ]
+        ],
+        "separator": "/"
     },
     "chunk_memory_layout": "C",
     "compressor": {
@@ -242,7 +243,7 @@ Zarrita treats a hierarchy and its root node as separate objects. E.g.:
 
 ```
 
-For convenience and familiarity, any relative path accessed via a 
+For convenience and familiarity, any relative path accessed via a
 hierarchy is treated as relative to the root group. E.g.:
 
 ```python
@@ -263,8 +264,8 @@ Explore the hierarchy top-down:
 
 ```python
 >>> h.get_children('/')  # doctest: +NORMALIZE_WHITESPACE
-{'arthur': 'implicit_group', 
- 'marvin': 'explicit_group', 
+{'arthur': 'implicit_group',
+ 'marvin': 'explicit_group',
  'tricia': 'implicit_group'}
 >>> h.get_children('/tricia')
 {'mcmillan': 'explicit_group'}
@@ -279,8 +280,8 @@ Alternative way to explore the hierarchy:
 
 ```python
 >>> h.get_children()  # doctest: +NORMALIZE_WHITESPACE
-{'arthur': 'implicit_group', 
- 'marvin': 'explicit_group', 
+{'arthur': 'implicit_group',
+ 'marvin': 'explicit_group',
  'tricia': 'implicit_group'}
 >>> h['tricia'].get_children()
 {'mcmillan': 'explicit_group'}
@@ -297,11 +298,11 @@ View the whole hierarchy in one go:
 >>> h.get_nodes()  # doctest: +NORMALIZE_WHITESPACE
 {'/': 'implicit_group',
  '/arthur': 'implicit_group',
- '/arthur/dent': 'array', 
- '/marvin': 'explicit_group', 
- '/marvin/android': 'array', 
- '/marvin/paranoid': 'explicit_group', 
- '/tricia': 'implicit_group', 
+ '/arthur/dent': 'array',
+ '/marvin': 'explicit_group',
+ '/marvin/android': 'array',
+ '/marvin/paranoid': 'explicit_group',
+ '/tricia': 'implicit_group',
  '/tricia/mcmillan': 'explicit_group'}
 
 ```
@@ -425,8 +426,9 @@ test.zr3
 ├── data
 │   └── arthur
 │       └── dent
-│           ├── 0.0
-│           └── 0.1
+│           └── 0
+│               ├── 0
+│               └── 1
 ├── meta
 │   └── root
 │       ├── arthur
@@ -450,10 +452,13 @@ test.zr3
 ├── data
 │   └── arthur
 │       └── dent
-│           ├── 0.0
-│           ├── 0.1
-│           ├── 1.0
-│           └── 2.0
+│           ├── 0
+│           │   ├── 0
+│           │   └── 1
+│           ├── 1
+│           │   └── 0
+│           └── 2
+│               └── 0
 ├── meta
 │   └── root
 │       ├── arthur
@@ -477,12 +482,15 @@ test.zr3
 ├── data
 │   └── arthur
 │       └── dent
-│           ├── 0.0
-│           ├── 0.1
-│           ├── 1.0
-│           ├── 1.1
-│           ├── 2.0
-│           └── 2.1
+│           ├── 0
+│           │   ├── 0
+│           │   └── 1
+│           ├── 1
+│           │   ├── 0
+│           │   └── 1
+│           └── 2
+│               ├── 0
+│               └── 1
 ├── meta
 │   └── root
 │       ├── arthur
@@ -558,7 +566,7 @@ array([[12, 13, 14, 15, 16],
 ```
 
 ## Use cloud storage
- 
+
 Read data previously copied to GCS:
 
 ```python
@@ -568,8 +576,8 @@ Read data previously copied to GCS:
 >>> sorted(h)
 ['/', '/arthur', '/arthur/dent', '/marvin', '/marvin/android', '/marvin/paranoid', '/tricia', '/tricia/mcmillan']
 >>> h.get_children('/')  # doctest: +NORMALIZE_WHITESPACE
-{'arthur': 'implicit_group', 
- 'marvin': 'explicit_group', 
+{'arthur': 'implicit_group',
+ 'marvin': 'explicit_group',
  'tricia': 'implicit_group'}
 >>> h.get_children('/tricia')
 {'mcmillan': 'explicit_group'}

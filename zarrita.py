@@ -219,7 +219,7 @@ class Hierarchy(Mapping):
         self.store[meta_key] = meta_doc
 
         # instantiate group
-        group = ExplicitGroup(store=self.store, path=path, owner=self, 
+        group = ExplicitGroup(store=self.store, path=path, owner=self,
                               attrs=attrs)
 
         return group
@@ -229,6 +229,7 @@ class Hierarchy(Mapping):
                      shape: Tuple[int],
                      dtype: Any,
                      chunk_shape: Tuple[int],
+                     separator: str = '/',
                      compressor: Optional[Codec] = None,
                      fill_value: Any = None,
                      attrs: Optional[Mapping] = None) -> Array:
@@ -254,6 +255,7 @@ class Hierarchy(Mapping):
             chunk_grid=dict(
                 type='regular',
                 chunk_shape=chunk_shape,
+                separator=separator,
             ),
             chunk_memory_layout='C',
             compressor=_encode_codec_metadata(compressor),
@@ -274,8 +276,8 @@ class Hierarchy(Mapping):
         # instantiate array
         array = Array(store=self.store, path=path, owner=self,
                       shape=shape, dtype=dtype, chunk_shape=chunk_shape,
-                      compressor=compressor, fill_value=fill_value,
-                      attrs=attrs)
+                      separator=separator, compressor=compressor,
+                      fill_value=fill_value, attrs=attrs)
 
         return array
 
@@ -302,6 +304,7 @@ class Hierarchy(Mapping):
             raise NotImplementedError
         chunk_shape = tuple(chunk_grid['chunk_shape'])
         _check_chunk_shape(chunk_shape, shape)
+        separator = chunk_grid['separator']
         chunk_memory_layout = meta['chunk_memory_layout']
         if chunk_memory_layout != 'C':
             raise NotImplementedError
@@ -314,8 +317,8 @@ class Hierarchy(Mapping):
 
         # instantiate array
         a = Array(store=self.store, path=path, owner=self, shape=shape,
-                  dtype=dtype, chunk_shape=chunk_shape, compressor=compressor,
-                  fill_value=fill_value, attrs=attrs)
+                  dtype=dtype, chunk_shape=chunk_shape, separator=separator,
+                  compressor=compressor, fill_value=fill_value, attrs=attrs)
 
         return a
 
@@ -426,14 +429,14 @@ class Hierarchy(Mapping):
     def get_children(self, path: str = '/') -> Dict[str, str]:
         path = _check_path(path)
         children = dict()
-        
+
         # attempt to list directory
         if path == '/':
             key_prefix = 'meta/root/'
         else:
             key_prefix = f'meta/root{path}/'
         result = self.store.list_dir(key_prefix)
-        
+
         # find explicit children
         for n in result.contents:
             if n.endswith('.array'):
@@ -512,7 +515,7 @@ class Group(Node, Mapping):
     def create_array(self, path: str, **kwargs) -> Array:
         path = self._dereference_path(path)
         return self.owner.create_array(path=path, **kwargs)
-    
+
     def get_array(self, path: str) -> Array:
         path = self._dereference_path(path)
         return self.owner.get_array(path=path)
@@ -556,6 +559,7 @@ class Array(Node):
                  shape: Tuple[int, ...],
                  dtype: Any,
                  chunk_shape: Tuple[int, ...],
+                 separator: str,
                  compressor: Optional[Codec],
                  fill_value: Any = None,
                  attrs: Optional[Mapping] = None):
@@ -563,6 +567,7 @@ class Array(Node):
         self.shape = shape
         self.dtype = dtype
         self.chunk_shape = chunk_shape
+        self.separator = separator
         self.compressor = compressor
         self.fill_value = fill_value
         self.attrs = attrs
@@ -619,7 +624,7 @@ class Array(Node):
             out[out_selection] = tmp
 
     def _chunk_key(self, chunk_coords):
-        suffix = '.'.join(map(str, chunk_coords))
+        suffix = self.separator.join(map(str, chunk_coords))
         if self.path == '/':
             # special case array as root node
             key = f'data/{suffix}'
