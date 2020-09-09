@@ -178,10 +178,17 @@ def _decode_codec_metadata(meta: Mapping) -> Optional[Codec]:
     if meta is None:
         return None
 
-    # only support gzip for now
-    if meta['codec'] != 'https://purl.org/zarr/spec/codec/gzip/1.0':
+    uri = 'https://purl.org/zarr/spec/codec/'
+    conf = meta['configuration']
+    if meta['codec'].startswith(uri + 'gzip/'):
+        codec = numcodecs.GZip(level=conf['level'])
+    elif meta['codec'].startswith(uri + 'blosc/'):
+        codec = numcodecs.Blosc(clevel=conf['clevel'],
+                                shuffle=conf['shuffle'],
+                                blocksize=conf['blocksize'],
+                                cname=conf['cname'])
+    else:
         raise NotImplementedError
-    codec = numcodecs.GZip(level=meta['configuration']['level'])
     return codec
 
 
@@ -218,7 +225,7 @@ class Hierarchy(Mapping):
         self.store[meta_key] = meta_doc
 
         # instantiate group
-        group = ExplicitGroup(store=self.store, path=path, owner=self, 
+        group = ExplicitGroup(store=self.store, path=path, owner=self,
                               attrs=attrs)
 
         return group
@@ -307,7 +314,7 @@ class Hierarchy(Mapping):
         chunk_memory_layout = meta['chunk_memory_layout']
         if chunk_memory_layout != 'C':
             raise NotImplementedError
-        compressor = _decode_codec_metadata(meta['compressor'])
+        compressor = _decode_codec_metadata(meta.get('compressor'))
         fill_value = meta['fill_value']
         for spec in meta['extensions']:
             if spec['must_understand']:
@@ -429,14 +436,14 @@ class Hierarchy(Mapping):
     def get_children(self, path: str = '/') -> Dict[str, str]:
         path = _check_path(path)
         children = dict()
-        
+
         # attempt to list directory
         if path == '/':
             key_prefix = 'meta/root/'
         else:
             key_prefix = f'meta/root{path}/'
         result = self.store.list_dir(key_prefix)
-        
+
         # find explicit children
         for n in result.contents:
             if n.endswith('.array'):
@@ -515,7 +522,7 @@ class Group(Node, Mapping):
     def create_array(self, path: str, **kwargs) -> Array:
         path = self._dereference_path(path)
         return self.owner.create_array(path=path, **kwargs)
-    
+
     def get_array(self, path: str) -> Array:
         path = self._dereference_path(path)
         return self.owner.get_array(path=path)
