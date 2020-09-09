@@ -189,10 +189,18 @@ def _decode_codec_metadata(meta: Mapping) -> Optional[Codec]:
     if meta is None:
         return None
 
-    # only support gzip for now
-    if meta["codec"] != "https://purl.org/zarr/spec/codec/gzip/1.0":
+    uri = 'https://purl.org/zarr/spec/codec/'
+    conf = meta['configuration']
+    if meta['codec'].startswith(uri + 'gzip/'):
+        codec = numcodecs.GZip(level=conf['level'])
+    elif meta['codec'].startswith(uri + 'blosc/'):
+        codec = numcodecs.Blosc(clevel=conf['clevel'],
+                                shuffle=conf['shuffle'],
+                                blocksize=conf['blocksize'],
+                                cname=conf['cname'])
+    else:
         raise NotImplementedError
-    codec = numcodecs.GZip(level=meta["configuration"]["level"])
+
     return codec
 
 
