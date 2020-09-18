@@ -87,7 +87,8 @@ test.zr3
         "chunk_shape": [
             2,
             5
-        ]
+        ],
+        "separator": "/"
     },
     "chunk_memory_layout": "C",
     "compressor": {
@@ -423,10 +424,12 @@ array([[42, 42, 42, 42, 42, 42, 42, 42, 42, 42],
 >>> tree('test.zr3', '-n', '--noreport')  # doctest: +NORMALIZE_WHITESPACE
 test.zr3
 ├── data
-│   └── arthur
-│       └── dent
-│           ├── 0.0
-│           └── 0.1
+│   └── root
+│       └── arthur
+│           └── dent
+│               └── c0
+│                   ├── 0
+│                   └── 1
 ├── meta
 │   └── root
 │       ├── arthur
@@ -448,12 +451,16 @@ array([[42, 42, 42, 42, 42, 42, 42, 42, 42, 42],
 >>> tree('test.zr3', '-n', '--noreport')  # doctest: +NORMALIZE_WHITESPACE
 test.zr3
 ├── data
-│   └── arthur
-│       └── dent
-│           ├── 0.0
-│           ├── 0.1
-│           ├── 1.0
-│           └── 2.0
+│   └── root
+│       └── arthur
+│           └── dent
+│               ├── c0
+│               │   ├── 0
+│               │   └── 1
+│               ├── c1
+│               │   └── 0
+│               └── c2
+│                   └── 0
 ├── meta
 │   └── root
 │       ├── arthur
@@ -475,14 +482,18 @@ array([[42, 42, 42, 42, 42, 42, 42, 42, 42, 42],
 >>> tree('test.zr3', '-n', '--noreport')  # doctest: +NORMALIZE_WHITESPACE
 test.zr3
 ├── data
-│   └── arthur
-│       └── dent
-│           ├── 0.0
-│           ├── 0.1
-│           ├── 1.0
-│           ├── 1.1
-│           ├── 2.0
-│           └── 2.1
+│   └── root
+│       └── arthur
+│           └── dent
+│               ├── c0
+│               │   ├── 0
+│               │   └── 1
+│               ├── c1
+│               │   ├── 0
+│               │   └── 1
+│               └── c2
+│                   ├── 0
+│                   └── 1
 ├── meta
 │   └── root
 │       ├── arthur
