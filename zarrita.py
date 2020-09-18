@@ -6,7 +6,6 @@ import itertools
 import math
 from collections.abc import Mapping, MutableMapping
 from typing import Iterator, Union, Optional, Tuple, Any, List, Dict, NamedTuple
-from operator import itemgetter
 
 # third-party dependencies
 
@@ -52,7 +51,7 @@ def create_hierarchy(store: Union[str, Store], **storage_options) -> Hierarchy:
     # create entry point metadata document
     meta: Dict[str, Any] = dict(
         zarr_format='https://purl.org/zarr/spec/protocol/core/3.0',
-        metadata_encoding='application/json',
+        metadata_encoding='https://purl.org/zarr/spec/protocol/core/3.0',
         extensions=[],
     )
 
@@ -88,7 +87,7 @@ def get_hierarchy(store: Union[str, Store], **storage_options) -> Hierarchy:
 
     # check metadata encoding
     metadata_encoding = meta['metadata_encoding']
-    if metadata_encoding != 'application/json':
+    if metadata_encoding != 'https://purl.org/zarr/spec/protocol/core/3.0':
         raise NotImplementedError
 
     # check extensions
