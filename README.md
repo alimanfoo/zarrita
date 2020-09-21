@@ -573,44 +573,44 @@ array([[12, 13, 14, 15, 16],
 Read data previously copied to GCS (temporarily disabled):
 
 ```python
-#>>> h = zarrita.get_hierarchy('gs://zarr-demo/v3/test.zr3', token='anon')
-#>>> h
-#<Hierarchy at gs://zarr-demo/v3/test.zr3>
-#>>> sorted(h)
-#['/', '/arthur', '/arthur/dent', '/marvin', '/marvin/android', '/marvin/paranoid', '/tricia', '/tricia/mcmillan']
-#>>> h.get_children('/')  # doctest: +NORMALIZE_WHITESPACE
-#{'arthur': 'implicit_group', 
-# 'marvin': 'explicit_group', 
-# 'tricia': 'implicit_group'}
-#>>> h.get_children('/tricia')
-#{'mcmillan': 'explicit_group'}
-#>>> h.get_children('/tricia/mcmillan')
-#{}
-#>>> h.get_children('/arthur')
-#{'dent': 'array'}
-#>>> h['/']
-#<Group / (implied)>
-#>>> h['/tricia']
-#<Group /tricia (implied)>
-#>>> g = h['/tricia/mcmillan']
-#>>> g
-#<Group /tricia/mcmillan>
-#>>> g.attrs
-#{'heart': 'gold', 'improbability': 'infinite'}
-#>>> a = h['/arthur/dent']
-#>>> a
-#<Array /arthur/dent>
-#>>> a.shape
-#(5, 10)
-#>>> a.dtype
-#dtype('int32')
-#>>> a.attrs
-#{'question': 'life', 'answer': 42}
-#>>> a[:]
-#array([[ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9],
-#       [10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
-#       [20, 21, 22, 23, 24, 25, 26, 27, 28, 29],
-#       [30, 31, 32, 33, 34, 35, 36, 37, 38, 39],
-#       [40, 41, 42, 43, 44, 45, 46, 47, 48, 49]], dtype=int32)
-#
+>>> h = zarrita.get_hierarchy('gs://zarr-demo/v3/test.zr3', token='anon')
+>>> h
+<Hierarchy at gs://zarr-demo/v3/test.zr3>
+>>> sorted(h)
+['/', '/arthur', '/arthur/dent', '/marvin', '/marvin/android', '/marvin/paranoid', '/tricia', '/tricia/mcmillan']
+>>> h.get_children('/')  # doctest: +NORMALIZE_WHITESPACE
+{'arthur': 'implicit_group', 
+ 'marvin': 'explicit_group', 
+ 'tricia': 'implicit_group'}
+>>> h.get_children('/tricia')
+{'mcmillan': 'explicit_group'}
+>>> h.get_children('/tricia/mcmillan')
+{}
+>>> h.get_children('/arthur')
+{'dent': 'array'}
+>>> h['/']
+<Group / (implied)>
+>>> h['/tricia']
+<Group /tricia (implied)>
+>>> g = h['/tricia/mcmillan']
+>>> g
+<Group /tricia/mcmillan>
+>>> g.attrs
+{'heart': 'gold', 'improbability': 'infinite'}
+>>> a = h['/arthur/dent']
+>>> a
+<Array /arthur/dent>
+>>> a.shape
+(5, 10)
+>>> a.dtype
+dtype('int32')
+>>> a.attrs
+{'question': 'life', 'answer': 42}
+>>> a[:]
+array([[ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9],
+       [10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+       [20, 21, 22, 23, 24, 25, 26, 27, 28, 29],
+       [30, 31, 32, 33, 34, 35, 36, 37, 38, 39],
+       [40, 41, 42, 43, 44, 45, 46, 47, 48, 49]], dtype=int32)
+
 ```
