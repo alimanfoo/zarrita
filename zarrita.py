@@ -174,7 +174,7 @@ def _encode_codec_metadata(codec: Codec) -> Optional[Mapping]:
     return meta
 
 
-def _decode_codec_metadata(meta: Mapping) -> Optional[Codec]:
+def _decode_codec_metadata(meta: Optional[Mapping]) -> Optional[Codec]:
     if meta is None:
         return None
 
