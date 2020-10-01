@@ -306,6 +306,9 @@ class Hierarchy(Mapping):
         if compressor is not None:
             meta["compressor"] = _encode_codec_metadata(compressor)
 
+        if compressor is None:
+            del meta['compressor']
+
         # serialise and store metadata document
         meta_doc = _json_encode_object(meta)
         meta_key = _array_meta_key(path, self.meta_key_suffix)
