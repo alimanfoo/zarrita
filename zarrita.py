@@ -270,6 +270,9 @@ class Hierarchy(Mapping):
             attributes=attrs,
         )
 
+        if compressor is None:
+            del meta['compressor']
+
         # serialise and store metadata document
         meta_doc = _json_encode_object(meta)
         if path == '/':
