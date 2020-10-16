@@ -110,7 +110,7 @@ test.zr3
 ## Create an array with no compressor
 
 ```python
->>> a = h.create_array('/deep/thought', shape=7_500_000, dtype='>f8', chunk_shape=42, compressor=None)
+>>> a = h.create_array('/deep/thought', shape=7_500_000, dtype='>f2', chunk_shape=42, compressor=None)
 >>> a
 <Array /deep/thought>
 >>> a.compressor is None
@@ -131,7 +131,7 @@ test.zr3
     "shape": [
         7500000
     ],
-    "data_type": ">f8",
+    "data_type": ">f2",
     "chunk_grid": {
         "type": "regular",
         "chunk_shape": [
@@ -478,28 +478,11 @@ array([[42, 42, 42, 42, 42, 42, 42, 42, 42, 42],
        [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
        [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
        [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0]], dtype=int32)
->>> tree('test.zr3', '-n', '--noreport')  # doctest: +NORMALIZE_WHITESPACE
-test.zr3
-├── data
-│   └── root
-│       └── arthur
-│           └── dent
-│               └── c0
-│                   ├── 0
-│                   └── 1
-├── meta
-│   └── root
-│       ├── arthur
-│       │   └── dent.array
-│       ├── deep
-│       │   └── thought.array
-│       ├── marvin
-│       │   ├── android.array
-│       │   └── paranoid.group
-│       ├── marvin.group
-│       └── tricia
-│           └── mcmillan.group
-└── zarr.json
+>>> tree('test.zr3/data/root/arthur/dent', '-n', '--noreport')  # doctest: +NORMALIZE_WHITESPACE
+test.zr3/data/root/arthur/dent
+└── c0
+    ├── 0
+    └── 1
 >>> a[:, 0] = 42
 >>> a[:]
 array([[42, 42, 42, 42, 42, 42, 42, 42, 42, 42],
@@ -507,32 +490,15 @@ array([[42, 42, 42, 42, 42, 42, 42, 42, 42, 42],
        [42,  0,  0,  0,  0,  0,  0,  0,  0,  0],
        [42,  0,  0,  0,  0,  0,  0,  0,  0,  0],
        [42,  0,  0,  0,  0,  0,  0,  0,  0,  0]], dtype=int32)
->>> tree('test.zr3', '-n', '--noreport')  # doctest: +NORMALIZE_WHITESPACE
-test.zr3
-├── data
-│   └── root
-│       └── arthur
-│           └── dent
-│               ├── c0
-│               │   ├── 0
-│               │   └── 1
-│               ├── c1
-│               │   └── 0
-│               └── c2
-│                   └── 0
-├── meta
-│   └── root
-│       ├── arthur
-│       │   └── dent.array
-│       ├── deep
-│       │   └── thought.array
-│       ├── marvin
-│       │   ├── android.array
-│       │   └── paranoid.group
-│       ├── marvin.group
-│       └── tricia
-│           └── mcmillan.group
-└── zarr.json
+>>> tree('test.zr3/data/root/arthur/dent', '-n', '--noreport')  # doctest: +NORMALIZE_WHITESPACE
+test.zr3/data/root/arthur/dent
+├── c0
+│   ├── 0
+│   └── 1
+├── c1
+│   └── 0
+└── c2
+    └── 0
 >>> a[:] = 42
 >>> a[:]
 array([[42, 42, 42, 42, 42, 42, 42, 42, 42, 42],
@@ -540,34 +506,17 @@ array([[42, 42, 42, 42, 42, 42, 42, 42, 42, 42],
        [42, 42, 42, 42, 42, 42, 42, 42, 42, 42],
        [42, 42, 42, 42, 42, 42, 42, 42, 42, 42],
        [42, 42, 42, 42, 42, 42, 42, 42, 42, 42]], dtype=int32)
->>> tree('test.zr3', '-n', '--noreport')  # doctest: +NORMALIZE_WHITESPACE
-test.zr3
-├── data
-│   └── root
-│       └── arthur
-│           └── dent
-│               ├── c0
-│               │   ├── 0
-│               │   └── 1
-│               ├── c1
-│               │   ├── 0
-│               │   └── 1
-│               └── c2
-│                   ├── 0
-│                   └── 1
-├── meta
-│   └── root
-│       ├── arthur
-│       │   └── dent.array
-│       ├── deep
-│       │   └── thought.array
-│       ├── marvin
-│       │   ├── android.array
-│       │   └── paranoid.group
-│       ├── marvin.group
-│       └── tricia
-│           └── mcmillan.group
-└── zarr.json
+>>> tree('test.zr3/data/root/arthur/dent', '-n', '--noreport')  # doctest: +NORMALIZE_WHITESPACE
+test.zr3/data/root/arthur/dent
+├── c0
+│   ├── 0
+│   └── 1
+├── c1
+│   ├── 0
+│   └── 1
+└── c2
+    ├── 0
+    └── 1
 >>> a[0, :] = np.arange(10)
 >>> a[:]
 array([[ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9],
@@ -615,6 +564,21 @@ array([[ 0,  1,  2,  3,  4,  5,  6],
 array([[12, 13, 14, 15, 16],
        [22, 23, 24, 25, 26],
        [32, 33, 34, 35, 36]], dtype=int32)
+>>> b = h['/deep/thought']  # no compressor
+>>> b
+<Array /deep/thought>
+>>> b[:10]
+array([0., 0., 0., 0., 0., 0., 0., 0., 0., 0.], dtype=float16)
+>>> b[:5] = 1
+>>> b[:10]
+array([1., 1., 1., 1., 1., 0., 0., 0., 0., 0.], dtype=float16)
+>>> tree('test.zr3/data/root/deep/thought', '-n', '--noreport')  # doctest: +NORMALIZE_WHITESPACE
+test.zr3/data/root/deep/thought
+└── c0
+>>> import numpy as np
+>>> with open('test.zr3/data/root/deep/thought/c0', mode='rb') as f:
+...     np.frombuffer(f.read(), dtype='>f2')[:10]
+array([1., 1., 1., 1., 1., 0., 0., 0., 0., 0.], dtype=float16)
 
 ```
 
