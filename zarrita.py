@@ -261,9 +261,9 @@ class Hierarchy(Mapping):
 
     def create_array(self,
                      path: str,
-                     shape: Tuple[int],
+                     shape: Union[int, Tuple[int, ...]],
                      dtype: Any,
-                     chunk_shape: Tuple[int],
+                     chunk_shape: Union[int, Tuple[int, ...]],
                      chunk_separator: str = "/",
                      compressor: Optional[Codec] = None,
                      fill_value: Any = None,
