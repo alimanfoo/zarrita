@@ -27,6 +27,7 @@ test.zr3
 {
     "zarr_format": "https://purl.org/zarr/spec/protocol/core/3.0",
     "metadata_encoding": "https://purl.org/zarr/spec/protocol/core/3.0",
+    "metadata_key_suffix": ".json",
     "extensions": []
 }
 
@@ -73,9 +74,9 @@ test.zr3
 ├── meta
 │   └── root
 │       └── arthur
-│           └── dent.array
+│           └── dent.array.json
 └── zarr.json
->>> cat('test.zr3/meta/root/arthur/dent.array')
+>>> cat('test.zr3/meta/root/arthur/dent.array.json')
 {
     "shape": [
         5,
@@ -122,11 +123,11 @@ test.zr3
 ├── meta
 │   └── root
 │       ├── arthur
-│       │   └── dent.array
+│       │   └── dent.array.json
 │       └── deep
-│           └── thought.array
+│           └── thought.array.json
 └── zarr.json
->>> cat('test.zr3/meta/root/deep/thought.array')
+>>> cat('test.zr3/meta/root/deep/thought.array.json')
 {
     "shape": [
         7500000
@@ -163,13 +164,13 @@ test.zr3
 ├── meta
 │   └── root
 │       ├── arthur
-│       │   └── dent.array
+│       │   └── dent.array.json
 │       ├── deep
-│       │   └── thought.array
+│       │   └── thought.array.json
 │       └── tricia
-│           └── mcmillan.group
+│           └── mcmillan.group.json
 └── zarr.json
->>> cat('test.zr3/meta/root/tricia/mcmillan.group')
+>>> cat('test.zr3/meta/root/tricia/mcmillan.group.json')
 {
     "extensions": [],
     "attributes": {
@@ -195,15 +196,15 @@ test.zr3
 ├── meta
 │   └── root
 │       ├── arthur
-│       │   └── dent.array
+│       │   └── dent.array.json
 │       ├── deep
-│       │   └── thought.array
+│       │   └── thought.array.json
 │       ├── marvin
-│       │   ├── android.array
-│       │   └── paranoid.group
-│       ├── marvin.group
+│       │   ├── android.array.json
+│       │   └── paranoid.group.json
+│       ├── marvin.group.json
 │       └── tricia
-│           └── mcmillan.group
+│           └── mcmillan.group.json
 └── zarr.json
 
 ```
@@ -443,15 +444,15 @@ test.zr3
 ├── meta
 │   └── root
 │       ├── arthur
-│       │   └── dent.array
+│       │   └── dent.array.json
 │       ├── deep
-│       │   └── thought.array
+│       │   └── thought.array.json
 │       ├── marvin
-│       │   ├── android.array
-│       │   └── paranoid.group
-│       ├── marvin.group
+│       │   ├── android.array.json
+│       │   └── paranoid.group.json
+│       ├── marvin.group.json
 │       └── tricia
-│           └── mcmillan.group
+│           └── mcmillan.group.json
 └── zarr.json
 >>> a[:, :]
 array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -600,31 +601,32 @@ array([1., 1., 1., 1., 1., 0., 0., 0., 0., 0.], dtype=float16)
 Read data previously copied to GCS:
 
 ```python
->>> h = zarrita.get_hierarchy('gs://zarr-demo/v3/test.zr3', token='anon')
->>> h
+>>> cloud_h = zarrita.get_hierarchy('gs://zarr-demo/v3/test.zr3', token='anon')
+>>> cloud_h
 <Hierarchy at gs://zarr-demo/v3/test.zr3>
->>> sorted(h)
-['/', '/arthur', '/arthur/dent', '/marvin', '/marvin/android', '/marvin/paranoid', '/tricia', '/tricia/mcmillan']
->>> h.get_children('/')  # doctest: +NORMALIZE_WHITESPACE
+>>> sorted(cloud_h)
+['/', '/arthur', '/arthur/dent', '/deep', '/deep/thought', '/marvin', '/marvin/android', '/marvin/paranoid', '/tricia', '/tricia/mcmillan']
+>>> cloud_h.get_children('/')  # doctest: +NORMALIZE_WHITESPACE
 {'arthur': 'implicit_group', 
+ 'deep': 'implicit_group',
  'marvin': 'explicit_group', 
  'tricia': 'implicit_group'}
->>> h.get_children('/tricia')
+>>> cloud_h.get_children('/tricia')
 {'mcmillan': 'explicit_group'}
->>> h.get_children('/tricia/mcmillan')
+>>> cloud_h.get_children('/tricia/mcmillan')
 {}
->>> h.get_children('/arthur')
+>>> cloud_h.get_children('/arthur')
 {'dent': 'array'}
->>> h['/']
+>>> cloud_h['/']
 <Group / (implied)>
->>> h['/tricia']
+>>> cloud_h['/tricia']
 <Group /tricia (implied)>
->>> g = h['/tricia/mcmillan']
+>>> g = cloud_h['/tricia/mcmillan']
 >>> g
 <Group /tricia/mcmillan>
 >>> g.attrs
 {'heart': 'gold', 'improbability': 'infinite'}
->>> a = h['/arthur/dent']
+>>> a = cloud_h['/arthur/dent']
 >>> a
 <Array /arthur/dent>
 >>> a.shape
