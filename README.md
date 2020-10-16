@@ -91,21 +91,59 @@ test.zr3
         "separator": "/"
     },
     "chunk_memory_layout": "C",
-    "compressor": {
-        "codec": "https://purl.org/zarr/spec/codec/gzip/1.0",
-        "configuration": {
-            "level": 1
-        }
-    },
     "fill_value": null,
     "extensions": [],
     "attributes": {
         "question": "life",
         "answer": 42
+    },
+    "compressor": {
+        "codec": "https://purl.org/zarr/spec/codec/gzip/1.0",
+        "configuration": {
+            "level": 1
+        }
     }
 }
 
 ```
+
+## Create an array with no compressor
+
+```python
+>>> a = h.create_array('/deep/thought', shape=7_500_000, dtype='>f8', chunk_shape=42, compressor=None)
+>>> a
+<Array /deep/thought>
+>>> a.compressor is None
+True
+>>> a.attrs
+{}
+>>> tree('test.zr3', '-n', '--noreport')  # doctest: +NORMALIZE_WHITESPACE
+test.zr3
+├── meta
+│   └── root
+│       ├── arthur
+│       │   └── dent.array
+│       └── deep
+│           └── thought.array
+└── zarr.json
+>>> cat('test.zr3/meta/root/deep/thought.array')
+{
+    "shape": [
+        7500000
+    ],
+    "data_type": ">f8",
+    "chunk_grid": {
+        "type": "regular",
+        "chunk_shape": [
+            42
+        ],
+        "separator": "/"
+    },
+    "chunk_memory_layout": "C",
+    "fill_value": null,
+    "extensions": [],
+    "attributes": {}
+}
 
 ## Create a group
 
@@ -126,6 +164,8 @@ test.zr3
 │   └── root
 │       ├── arthur
 │       │   └── dent.array
+│       ├── deep
+│       │   └── thought.array
 │       └── tricia
 │           └── mcmillan.group
 └── zarr.json
@@ -156,6 +196,8 @@ test.zr3
 │   └── root
 │       ├── arthur
 │       │   └── dent.array
+│       ├── deep
+│       │   └── thought.array
 │       ├── marvin
 │       │   ├── android.array
 │       │   └── paranoid.group
@@ -265,6 +307,7 @@ Explore the hierarchy top-down:
 ```python
 >>> h.get_children('/')  # doctest: +NORMALIZE_WHITESPACE
 {'arthur': 'implicit_group', 
+ 'deep': 'implicit_group',
  'marvin': 'explicit_group', 
  'tricia': 'implicit_group'}
 >>> h.get_children('/tricia')
@@ -281,6 +324,7 @@ Alternative way to explore the hierarchy:
 ```python
 >>> h.get_children()  # doctest: +NORMALIZE_WHITESPACE
 {'arthur': 'implicit_group', 
+ 'deep': 'implicit_group',
  'marvin': 'explicit_group', 
  'tricia': 'implicit_group'}
 >>> h['tricia'].get_children()
@@ -299,6 +343,8 @@ View the whole hierarchy in one go:
 {'/': 'implicit_group',
  '/arthur': 'implicit_group',
  '/arthur/dent': 'array', 
+ '/deep': 'implicit_group',
+ '/deep/thought': 'array',
  '/marvin': 'explicit_group', 
  '/marvin/android': 'array', 
  '/marvin/paranoid': 'explicit_group', 
@@ -355,7 +401,7 @@ Iterating over a group returns names of all child nodes:
 
 ```python
 >>> sorted(h['/'])
-['arthur', 'marvin', 'tricia']
+['arthur', 'deep', 'marvin', 'tricia']
 >>> sorted(h['/arthur'])
 ['dent']
 >>> sorted(h['/tricia'])
@@ -370,8 +416,17 @@ Iterating over a group returns names of all child nodes:
 Iterate over a hierarchy returns paths for all explicit nodes:
 
 ```python
->>> sorted(h)
-['/', '/arthur', '/arthur/dent', '/marvin', '/marvin/android', '/marvin/paranoid', '/tricia', '/tricia/mcmillan']
+>>> sorted(h)  # doctest: +NORMALIZE_WHITESPACE
+['/', 
+ '/arthur', 
+ '/arthur/dent',
+ '/deep',
+ '/deep/thought', 
+ '/marvin', 
+ '/marvin/android', 
+ '/marvin/paranoid', 
+ '/tricia', 
+ '/tricia/mcmillan']
 
 ```
 
@@ -389,6 +444,8 @@ test.zr3
 │   └── root
 │       ├── arthur
 │       │   └── dent.array
+│       ├── deep
+│       │   └── thought.array
 │       ├── marvin
 │       │   ├── android.array
 │       │   └── paranoid.group
@@ -434,6 +491,8 @@ test.zr3
 │   └── root
 │       ├── arthur
 │       │   └── dent.array
+│       ├── deep
+│       │   └── thought.array
 │       ├── marvin
 │       │   ├── android.array
 │       │   └── paranoid.group
@@ -465,6 +524,8 @@ test.zr3
 │   └── root
 │       ├── arthur
 │       │   └── dent.array
+│       ├── deep
+│       │   └── thought.array
 │       ├── marvin
 │       │   ├── android.array
 │       │   └── paranoid.group
@@ -498,6 +559,8 @@ test.zr3
 │   └── root
 │       ├── arthur
 │       │   └── dent.array
+│       ├── deep
+│       │   └── thought.array
 │       ├── marvin
 │       │   ├── android.array
 │       │   └── paranoid.group
@@ -570,7 +633,7 @@ array([[12, 13, 14, 15, 16],
 
 ## Use cloud storage
  
-Read data previously copied to GCS (temporarily disabled):
+Read data previously copied to GCS:
 
 ```python
 >>> h = zarrita.get_hierarchy('gs://zarr-demo/v3/test.zr3', token='anon')

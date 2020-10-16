@@ -125,13 +125,19 @@ def _check_path(path: str) -> str:
     return path
 
 
-def _check_attrs(attrs: Optional[Mapping]) -> None:
+def _check_attrs(attrs: Optional[Mapping]) -> Mapping:
     assert attrs is None or isinstance(attrs, Mapping)
+    if attrs is None:
+        attrs = dict()
+    return attrs
 
 
-def _check_shape(shape: Tuple[Any, ...]) -> None:
-    assert isinstance(shape, tuple)
+def _check_shape(shape: Union[int, Tuple[int, ...]]) -> Tuple[int, ...]:
+    assert isinstance(shape, (int, tuple))
+    if isinstance(shape, int):
+        shape = shape,
     assert all([isinstance(s, int) for s in shape])
+    return shape
 
 
 def _check_dtype(dtype: Any) -> np.dtype:
@@ -149,10 +155,14 @@ def _check_dtype(dtype: Any) -> np.dtype:
     return dtype
 
 
-def _check_chunk_shape(chunk_shape: Tuple[Any, ...], shape: Tuple[Any, ...]) -> None:
-    assert isinstance(chunk_shape, tuple)
+def _check_chunk_shape(chunk_shape: Union[int, Tuple[int, ...]],
+                       shape: Tuple[int, ...]) -> Tuple[int, ...]:
+    assert isinstance(chunk_shape, (int, tuple))
+    if isinstance(chunk_shape, int):
+        chunk_shape = chunk_shape,
     assert all([isinstance(c, int) for c in chunk_shape])
     assert len(chunk_shape) == len(shape)
+    return chunk_shape
 
 
 def _check_compressor(compressor: Optional[Codec]) -> None:
@@ -235,11 +245,11 @@ class Hierarchy(Mapping):
 
         # sanity checks
         path = _check_path(path)
-        _check_shape(shape)
+        shape = _check_shape(shape)
         dtype = _check_dtype(dtype)
-        _check_chunk_shape(chunk_shape, shape)
+        chunk_shape = _check_chunk_shape(chunk_shape, shape)
         _check_compressor(compressor)
-        _check_attrs(attrs)
+        attrs = _check_attrs(attrs)
 
         # encode data type
         if dtype == np.bool:
@@ -257,11 +267,12 @@ class Hierarchy(Mapping):
                 separator=chunk_separator,
             ),
             chunk_memory_layout='C',
-            compressor=_encode_codec_metadata(compressor),
             fill_value=fill_value,
             extensions=[],
             attributes=attrs,
         )
+        if compressor is not None:
+            meta['compressor'] = _encode_codec_metadata(compressor)
 
         # serialise and store metadata document
         meta_doc = _json_encode_object(meta)
@@ -307,7 +318,7 @@ class Hierarchy(Mapping):
         chunk_memory_layout = meta['chunk_memory_layout']
         if chunk_memory_layout != 'C':
             raise NotImplementedError
-        compressor = _decode_codec_metadata(meta['compressor'])
+        compressor = _decode_codec_metadata(meta.get('compressor', None))
         fill_value = meta['fill_value']
         for spec in meta['extensions']:
             if spec['must_understand']:
