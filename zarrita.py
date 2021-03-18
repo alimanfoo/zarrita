@@ -276,7 +276,7 @@ class Hierarchy(Mapping):
         attrs = _check_attrs(attrs)
 
         # encode data type
-        if dtype == np.bool:
+        if dtype == np.bool_:
             data_type = "bool"
         else:
             data_type = dtype.str.strip('|')
