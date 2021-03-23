@@ -175,7 +175,6 @@ def _encode_codec_metadata(codec: Codec) -> Optional[Mapping]:
         return None
 
     # only support gzip for now
-    assert codec.codec_id in {"gzip"}
     config = codec.get_config()
     del config["id"]
     meta = {
@@ -305,9 +304,6 @@ class Hierarchy(Mapping):
         )
         if compressor is not None:
             meta["compressor"] = _encode_codec_metadata(compressor)
-
-        if compressor is None:
-            del meta['compressor']
 
         # serialise and store metadata document
         meta_doc = _json_encode_object(meta)
