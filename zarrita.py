@@ -199,7 +199,7 @@ def _decode_codec_metadata(meta: Optional[Mapping]) -> Optional[Codec]:
     conf = meta['configuration']
     if meta['codec'].startswith(uri + 'gzip/'):
         codec = numcodecs.GZip(level=conf['level'])
-    if meta['codec'].startswith(uri + 'zlib/'):
+    elif meta['codec'].startswith(uri + 'zlib/'):
         codec = numcodecs.Zlib()
     elif meta['codec'].startswith(uri + 'blosc/'):
         codec = numcodecs.Blosc(clevel=conf['clevel'],
