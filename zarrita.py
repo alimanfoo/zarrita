@@ -177,8 +177,15 @@ def _encode_codec_metadata(codec: Codec) -> Optional[Mapping]:
     # only support gzip for now
     config = codec.get_config()
     del config["id"]
+    uri = 'https://purl.org/zarr/spec/codec/'
+    if isinstance(codec, numcodecs.GZip):
+        uri = uri + "gzip/1.0"
+    elif isinstance(codec, numcodecs.Zlib):
+        uri = uri + "zlib/1.0"
+    elif isinstance(codec, numcodecs.Blosc):
+        uri = uri + "blosc/1.0"
     meta = {
-        "codec": "https://purl.org/zarr/spec/codec/gzip/1.0",
+        "codec": uri,
         "configuration": config,
     }
     return meta
@@ -192,6 +199,8 @@ def _decode_codec_metadata(meta: Optional[Mapping]) -> Optional[Codec]:
     conf = meta['configuration']
     if meta['codec'].startswith(uri + 'gzip/'):
         codec = numcodecs.GZip(level=conf['level'])
+    if meta['codec'].startswith(uri + 'zlib/'):
+        codec = numcodecs.Zlib()
     elif meta['codec'].startswith(uri + 'blosc/'):
         codec = numcodecs.Blosc(clevel=conf['clevel'],
                                 shuffle=conf['shuffle'],
