@@ -1056,6 +1056,9 @@ class Store(MutableMapping):
     def list_dir(self, prefix: str) -> ListDirResult:
         raise NotImplementedError
 
+    def list(self) -> List[str]:
+        return self.list_prefix("/")
+
 
 class FileSystemStore(Store):
 
