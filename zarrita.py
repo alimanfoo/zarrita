@@ -422,6 +422,7 @@ class Hierarchy(Mapping):
         nodes: Dict[str, str] = dict()
         result = self.store.list_prefix("meta/")
         for key in result:
+            key = key[5:]  # discard meta/ prefix
             if key == "root.array" + self.meta_key_suffix:
                 nodes["/"] = "array"
             elif key == "root.group" + self.meta_key_suffix:
@@ -466,16 +467,16 @@ class Hierarchy(Mapping):
         for n in result.contents:
             if n.endswith(self.array_suffix):
                 node_type = "array"
-                name = n[:-len(self.array_suffix)]
+                name = n[len(key_prefix):-len(self.array_suffix)]
                 children[name] = node_type
             elif n.endswith(self.group_suffix):
                 node_type = "explicit_group"
-                name = n[:-len(self.group_suffix)]
+                name = n[len(key_prefix):-len(self.group_suffix)]
                 children[name] = node_type
 
         # find implicit children
         for name in result.prefixes:
-            children.setdefault(name, "implicit_group")
+            children.setdefault(name[len(key_prefix):], "implicit_group")
 
         # sort by path for readability
         items = sorted(children.items())
