@@ -422,6 +422,7 @@ class Hierarchy(Mapping):
         nodes: Dict[str, str] = dict()
         result = self.store.list_prefix("meta/")
         for key in result:
+            key = key[5:]  # discard meta/ prefix
             if key == "root.array" + self.meta_key_suffix:
                 nodes["/"] = "array"
             elif key == "root.group" + self.meta_key_suffix:
@@ -466,16 +467,16 @@ class Hierarchy(Mapping):
         for n in result.contents:
             if n.endswith(self.array_suffix):
                 node_type = "array"
-                name = n[:-len(self.array_suffix)]
+                name = n[len(key_prefix):-len(self.array_suffix)]
                 children[name] = node_type
             elif n.endswith(self.group_suffix):
                 node_type = "explicit_group"
-                name = n[:-len(self.group_suffix)]
+                name = n[len(key_prefix):-len(self.group_suffix)]
                 children[name] = node_type
 
         # find implicit children
         for name in result.prefixes:
-            children.setdefault(name, "implicit_group")
+            children.setdefault(name[len(key_prefix):], "implicit_group")
 
         # sort by path for readability
         items = sorted(children.items())
@@ -1056,6 +1057,9 @@ class Store(MutableMapping):
     def list_dir(self, prefix: str) -> ListDirResult:
         raise NotImplementedError
 
+    def list(self) -> List[str]:
+        return self.list_prefix("")
+
 
 class FileSystemStore(Store):
 
@@ -1107,13 +1111,14 @@ class FileSystemStore(Store):
 
     def list_prefix(self, prefix: str) -> List[str]:
         assert isinstance(prefix, str)
-        assert prefix[-1] == "/"
+        if prefix:
+            assert prefix[-1] == "/"
         path = f"{self.root}/{prefix}"
         try:
             items = self.fs.find(path, withdirs=False, detail=False)
         except FileNotFoundError:
             return []
-        return [item.split(path)[1] for item in items]
+        return [prefix + item.split(path)[1] for item in items]
 
     def list_dir(self, prefix: str = "") -> ListDirResult:
         assert isinstance(prefix, str)
@@ -1135,9 +1140,9 @@ class FileSystemStore(Store):
         for item in ls:
             name = item["name"].split(path)[1]
             if item["type"] == "file":
-                contents.append(name)
+                contents.append(prefix + name)
             elif item["type"] == "directory":
-                prefixes.append(name)
+                prefixes.append(prefix + name)
 
         return ListDirResult(contents=contents, prefixes=prefixes)
 
