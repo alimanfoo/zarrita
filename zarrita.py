@@ -1057,7 +1057,7 @@ class Store(MutableMapping):
         raise NotImplementedError
 
     def list(self) -> List[str]:
-        return self.list_prefix("/")
+        return self.list_prefix("")
 
 
 class FileSystemStore(Store):
@@ -1110,13 +1110,14 @@ class FileSystemStore(Store):
 
     def list_prefix(self, prefix: str) -> List[str]:
         assert isinstance(prefix, str)
-        assert prefix[-1] == "/"
+        if prefix:
+            assert prefix[-1] == "/"
         path = f"{self.root}/{prefix}"
         try:
             items = self.fs.find(path, withdirs=False, detail=False)
         except FileNotFoundError:
             return []
-        return [item.split(path)[1] for item in items]
+        return [prefix + item.split(path)[1] for item in items]
 
     def list_dir(self, prefix: str = "") -> ListDirResult:
         assert isinstance(prefix, str)
@@ -1138,9 +1139,9 @@ class FileSystemStore(Store):
         for item in ls:
             name = item["name"].split(path)[1]
             if item["type"] == "file":
-                contents.append(name)
+                contents.append(prefix + name)
             elif item["type"] == "directory":
-                prefixes.append(name)
+                prefixes.append(prefix + name)
 
         return ListDirResult(contents=contents, prefixes=prefixes)
 
