@@ -179,7 +179,7 @@ def _encode_codec_metadata(codec: Codec) -> Optional[Mapping]:
     config = codec.get_config()
     del config["id"]
     meta = {
-        "codec": "https://purl.org/zarr/spec/codec/gzip/1.0",
+        "codec": "https://purl.org/zarr/spec/codecs/gzip/1.0",
         "configuration": config,
     }
     return meta
@@ -190,7 +190,7 @@ def _decode_codec_metadata(meta: Mapping) -> Optional[Codec]:
         return None
 
     # only support gzip for now
-    if meta["codec"] != "https://purl.org/zarr/spec/codec/gzip/1.0":
+    if meta["codec"] != "https://purl.org/zarr/spec/codecs/gzip/1.0":
         raise NotImplementedError
     codec = numcodecs.GZip(level=meta["configuration"]["level"])
     return codec
