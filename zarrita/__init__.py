@@ -753,6 +753,7 @@ class Array(Node):
                 chunk = value.astype(self.dtype, order="C", copy=False)
 
         else:
+            assert self.store.is_readable
             # partially replace the contents of this chunk
 
             try:
