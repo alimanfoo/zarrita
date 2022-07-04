@@ -5,16 +5,20 @@ import numbers
 import itertools
 import math
 import re
-from collections.abc import Mapping, MutableMapping
+from collections.abc import Mapping
 from typing import Iterator, Union, Optional, Tuple, Any, List, Dict, NamedTuple
 
 # third-party dependencies
 
-import fsspec
 import numpy as np
 import numcodecs
 from numcodecs.abc import Codec
 from numcodecs.compat import ensure_ndarray
+
+# local packages
+
+from .store.base import Store, WriteableStore, ReadableStore
+from .store.fs import FileSystemStore
 
 
 def _json_encode_object(o: Mapping) -> bytes:
@@ -44,10 +48,11 @@ def _check_store(store: Union[str, Store],
     return store
 
 
-def create_hierarchy(store: Union[str, Store], **storage_options) -> Hierarchy:
+def create_hierarchy(store: Union[str, WriteableStore], **storage_options) -> Hierarchy:
 
     # sanity checks
     store = _check_store(store, **storage_options)
+    assert store.is_writeable
 
     # create entry point metadata document
     meta_key_suffix = ".json"
@@ -61,7 +66,7 @@ def create_hierarchy(store: Union[str, Store], **storage_options) -> Hierarchy:
     # serialise and store metadata document
     entry_meta_doc = _json_encode_object(meta)
     entry_meta_key = "zarr.json"
-    store[entry_meta_key] = entry_meta_doc
+    store.set(entry_meta_key, entry_meta_doc)
 
     # instantiate a hierarchy
     hierarchy = Hierarchy(store=store, meta_key_suffix=meta_key_suffix)
@@ -69,14 +74,15 @@ def create_hierarchy(store: Union[str, Store], **storage_options) -> Hierarchy:
     return hierarchy
 
 
-def get_hierarchy(store: Union[str, Store], **storage_options) -> Hierarchy:
+def get_hierarchy(store: Union[str, ReadableStore], **storage_options) -> Hierarchy:
 
     # sanity checks
     store = _check_store(store, **storage_options)
+    assert store.is_readable
 
     # retrieve and parse entry point metadata document
     meta_key = "zarr.json"
-    meta_doc = store[meta_key]
+    meta_doc = store.get(meta_key)
     meta = _json_decode_object(meta_doc)
 
     # check protocol version
@@ -235,8 +241,8 @@ class Hierarchy(Mapping):
     def create_group(self,
                      path: str,
                      attrs: Optional[Mapping] = None) -> ExplicitGroup:
-
         # sanity checks
+        assert self.store.is_writeable
         path = _check_path(path)
         _check_attrs(attrs)
 
@@ -249,7 +255,7 @@ class Hierarchy(Mapping):
         # serialise and store metadata document
         meta_doc = _json_encode_object(meta)
         meta_key = _group_meta_key(path, self.meta_key_suffix)
-        self.store[meta_key] = meta_doc
+        self.store.set(meta_key, meta_doc)
 
         # instantiate group
         group = ExplicitGroup(store=self.store, path=path, owner=self,
@@ -268,6 +274,7 @@ class Hierarchy(Mapping):
                      attrs: Optional[Mapping] = None) -> Array:
 
         # sanity checks
+        assert self.store.is_writeable
         path = _check_path(path)
         shape = _check_shape(shape)
         dtype = _check_dtype(dtype)
@@ -301,7 +308,7 @@ class Hierarchy(Mapping):
         # serialise and store metadata document
         meta_doc = _json_encode_object(meta)
         meta_key = _array_meta_key(path, self.meta_key_suffix)
-        self.store[meta_key] = meta_doc
+        self.store.set(meta_key, meta_doc)
 
         # instantiate array
         array = Array(store=self.store, path=path, owner=self,
@@ -313,11 +320,12 @@ class Hierarchy(Mapping):
 
     def get_array(self, path: str) -> Array:
         path = _check_path(path)
+        assert self.store.is_readable
 
         # retrieve and parse array metadata document
         meta_key = _array_meta_key(path, self.meta_key_suffix)
         try:
-            meta_doc = self.store[meta_key]
+            meta_doc = self.store.get(meta_key)
         except KeyError:
             raise NodeNotFoundError(path=path)
         meta = _json_decode_object(meta_doc)
@@ -352,11 +360,12 @@ class Hierarchy(Mapping):
 
     def get_explicit_group(self, path: str) -> ExplicitGroup:
         path = _check_path(path)
+        assert self.store.is_readable
 
         # retrieve and parse group metadata document
         meta_key = _group_meta_key(path, self.meta_key_suffix)
         try:
-            meta_doc = self.store[meta_key]
+            meta_doc = self.store.get(meta_key)
         except KeyError:
             raise NodeNotFoundError(path=path)
         meta = _json_decode_object(meta_doc)
@@ -371,12 +380,14 @@ class Hierarchy(Mapping):
 
     def get_implicit_group(self, path: str) -> ImplicitGroup:
         path = _check_path(path)
+        assert self.store.is_readable
+        assert self.store.is_listable
 
         # attempt to list directory
         if path == "/":
             key_prefix = "meta/root/"
         else:
-            key_prefix = f"meta/root{path}/"
+            key_prefix = f"meta/root/{path}/"
         result = self.store.list_dir(key_prefix)
         if not (result.contents or result.prefixes):
             raise NodeNotFoundError(path=path)
@@ -419,6 +430,7 @@ class Hierarchy(Mapping):
         return f"<Hierarchy at {repr(self.store)}>"
 
     def get_nodes(self) -> Dict:
+        assert self.store.is_listable
         nodes: Dict[str, str] = dict()
         result = self.store.list_prefix("meta/")
         for key in result:
@@ -453,6 +465,7 @@ class Hierarchy(Mapping):
 
     def get_children(self, path: str = "/") -> Dict[str, str]:
         path = _check_path(path)
+        assert self.store.is_listable
         children = dict()
 
         # attempt to list directory
@@ -625,13 +638,13 @@ class Array(Node):
             return out[()]
 
     def _chunk_getitem(self, chunk_coords, chunk_selection, out, out_selection):
-
+        assert self.store.is_readable
         # obtain key for chunk
         chunk_key = self._chunk_key(chunk_coords)
 
         try:
             # obtain encoded data for chunk
-            encoded_chunk_data = self.store[chunk_key]
+            encoded_chunk_data = self.store.get(chunk_key)
 
         except KeyError:
             # chunk not initialized, maybe fill
@@ -717,6 +730,7 @@ class Array(Node):
             self._chunk_setitem(chunk_coords, chunk_selection, chunk_value)
 
     def _chunk_setitem(self, chunk_coords, chunk_selection, value):
+        assert self.store.is_writeable
 
         # obtain key for chunk storage
         chunk_key = self._chunk_key(chunk_coords)
@@ -744,7 +758,7 @@ class Array(Node):
             try:
 
                 # obtain compressed data for chunk
-                encoded_chunk_data = self.store[chunk_key]
+                encoded_chunk_data = self.store.get(chunk_key)
 
             except KeyError:
 
@@ -771,7 +785,7 @@ class Array(Node):
         encoded_chunk_data = self._encode_chunk(chunk)
 
         # store
-        self.store[chunk_key] = encoded_chunk_data
+        self.store.set(chunk_key, encoded_chunk_data)
 
     def _encode_chunk(self, chunk):
 
@@ -1026,123 +1040,3 @@ class _BasicIndexer(object):
                                   if p.dim_out_sel is not None)
 
             yield _ChunkProjection(chunk_coords, chunk_selection, out_selection)
-
-
-class ListDirResult(NamedTuple):
-    contents: List[str]
-    prefixes: List[str]
-
-
-class Store(MutableMapping):
-
-    def __getitem__(self, key: str, default: Optional[bytes] = None) -> bytes:
-        raise NotImplementedError
-
-    def __setitem__(self, key: str, value: bytes) -> None:
-        raise NotImplementedError
-
-    def __delitem__(self, key: str) -> None:
-        raise NotImplementedError
-
-    def __iter__(self) -> Iterator[str]:
-        raise NotImplementedError
-
-    def __len__(self) -> int:
-        return sum(1 for _ in self)
-
-    def list_prefix(self, prefix: str) -> List[str]:
-        raise NotImplementedError
-
-    def list_dir(self, prefix: str) -> ListDirResult:
-        raise NotImplementedError
-
-
-class FileSystemStore(Store):
-
-    # TODO ultimately replace this with the fsspec FSMap class, but for now roll
-    # our own implementation in order to be able to add some extra methods for
-    # listing keys.
-
-    def __init__(self, url: str, **storage_options):
-        assert isinstance(url, str)
-
-        # instantiate file system
-        fs, root = fsspec.core.url_to_fs(url, **storage_options)
-        self.fs = fs
-        self.root = root.rstrip("/")
-
-    def __getitem__(self, key: str, default: Optional[bytes] = None) -> bytes:
-        assert isinstance(key, str)
-        path = f"{self.root}/{key}"
-
-        try:
-            value = self.fs.cat(path)
-        except (FileNotFoundError, IsADirectoryError, NotADirectoryError):
-            if default is not None:
-                return default
-            raise KeyError(key)
-
-        return value
-
-    def __setitem__(self, key: str, value: bytes) -> None:
-        assert isinstance(key, str)
-        path = f"{self.root}/{key}"
-
-        # ensure parent folder exists
-        # noinspection PyProtectedMember
-        self.fs.mkdirs(self.fs._parent(path), exist_ok=True)
-
-        # write data
-        with self.fs.open(path, "wb") as f:
-            f.write(value)
-
-    def __delitem__(self, key: str) -> None:
-        assert isinstance(key, str)
-        # TODO
-        pass
-
-    def __iter__(self) -> Iterator[str]:
-        for item in self.fs.find(self.root, withdirs=False, detail=False):
-            yield item.split(self.root + "/")[1]
-
-    def list_prefix(self, prefix: str) -> List[str]:
-        assert isinstance(prefix, str)
-        assert prefix[-1] == "/"
-        path = f"{self.root}/{prefix}"
-        try:
-            items = self.fs.find(path, withdirs=False, detail=False)
-        except FileNotFoundError:
-            return []
-        return [item.split(path)[1] for item in items]
-
-    def list_dir(self, prefix: str = "") -> ListDirResult:
-        assert isinstance(prefix, str)
-        if prefix:
-            assert prefix[-1] == "/"
-
-        # setup result
-        contents: List[str] = []
-        prefixes: List[str] = []
-
-        # attempt to list directory
-        path = f"{self.root}/{prefix}"
-        try:
-            ls = self.fs.ls(path, detail=True)
-        except FileNotFoundError:
-            return ListDirResult(contents=contents, prefixes=prefixes)
-
-        # build result
-        for item in ls:
-            name = item["name"].split(path)[1]
-            if item["type"] == "file":
-                contents.append(name)
-            elif item["type"] == "directory":
-                prefixes.append(name)
-
-        return ListDirResult(contents=contents, prefixes=prefixes)
-
-    def __repr__(self) -> str:
-        protocol = self.fs.protocol
-        if isinstance(protocol, tuple):
-            protocol = protocol[-1]
-        return f"{protocol}://{self.root}"
