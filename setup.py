@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 requirements = [
     "fsspec",
@@ -16,6 +16,6 @@ setup(
         "A minimal, exploratory implementation "
         "of the Zarr version 3.0 core protocol"
     ),
-    py_modules=["zarrita"],
+    packages=find_packages(include="zarrita"),
     install_requires=requirements,
 )
